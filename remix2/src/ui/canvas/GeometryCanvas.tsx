@@ -41,6 +41,10 @@ import {
   computeAngleBisectorLine
 } from '../state/auxiliaryEngine';
 import {
+  resolveOrCreatePoint,
+  rollbackDynamicPoint
+} from './pointResolution';
+import {
   dispatchSemanticCommand,
   CommandExecutionContext,
   CommandExecutionResult
@@ -65,6 +69,8 @@ interface GeometryCanvasProps {
   readonly onUpdateGeometryState?: (state: UniversalGeometryState) => void;
   readonly activePlane?: ActivePlane;
   readonly researchSession?: ResearchSession;
+  readonly tangentQuantity?: 1 | 2;
+  readonly onSetTangentQuantity?: (qty: 1 | 2) => void;
 }
 
 export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
@@ -82,7 +88,9 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
   geometryState,
   onUpdateGeometryState,
   activePlane,
-  researchSession
+  researchSession,
+  tangentQuantity = 1,
+  onSetTangentQuantity
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -102,6 +110,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
   // Tool-specific multi-step state machine
   // toolStep: 0 = IDLE, 1 = FIRST_SELECTION / CENTER_SELECTED, 2 = SECOND_STEP
   const [toolStep, setToolStep] = useState<number>(0);
+  const [tangentStep, setTangentStep] = useState<number>(0);
   const [stepP1, setStepP1] = useState<{ id?: string; x: number; y: number; label?: string } | null>(null);
   const [stepP2, setStepP2] = useState<{ id?: string; x: number; y: number; label?: string } | null>(null);
   const [refEntity, setRefEntity] = useState<{ id: string; type: 'segment' | 'point' | 'line'; label?: string } | null>(null);
@@ -134,16 +143,25 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     setDraggingVertexIndex(null);
   }, [uiState.activeTool]);
 
-  // World coordinate converter from client pointer event
+  // World coordinate converter from client pointer event (with safe CTM inversion guard)
   const getPointerWorldCoord = useCallback((e: React.PointerEvent | PointerEvent): { x: number; y: number } => {
     if (!svgRef.current || !worldGroupRef.current) return { x: 0, y: 0 };
-    const pt = svgRef.current.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const ctm = worldGroupRef.current.getScreenCTM();
-    if (!ctm) return { x: 0, y: 0 };
-    const worldPt = pt.matrixTransform(ctm.inverse());
-    return { x: worldPt.x, y: worldPt.y };
+    try {
+      const pt = svgRef.current.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const ctm = worldGroupRef.current.getScreenCTM();
+      if (!ctm) return { x: 0, y: 0 };
+      const inv = ctm.inverse();
+      const worldPt = pt.matrixTransform(inv);
+      if (!Number.isFinite(worldPt.x) || !Number.isFinite(worldPt.y)) {
+        return { x: 0, y: 0 };
+      }
+      return { x: worldPt.x, y: worldPt.y };
+    } catch {
+      // Safe fallback when matrix determinant is zero or browser throws DOMException
+      return { x: 0, y: 0 };
+    }
   }, []);
 
   const { center, radius, vertices, chords, dialTicks } = presentation;
@@ -186,6 +204,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
   // Reset current tool step
   const handleCancelTool = useCallback(() => {
     setToolStep(0);
+    setTangentStep(0);
     setStepP1(null);
     setStepP2(null);
     setRefEntity(null);
@@ -210,14 +229,15 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     onZoomByWheel(e.deltaY, e.clientX, e.clientY);
   }, [onZoomByWheel]);
 
-  // Headless Command Dispatcher Bridge for UI actions
+  // Headless Command Dispatcher Bridge for UI actions (supports explicit auxiliary context override)
   const executeCommand = useCallback(
-    (cmd: SemanticCommand): CommandExecutionResult => {
+    (cmd: SemanticCommand, auxiliaryOverride?: AuxiliaryState): CommandExecutionResult => {
+      const activeAux = auxiliaryOverride || auxiliaryState;
       const ctx: CommandExecutionContext = {
         canonicalVertices: vertices,
         circumcircle: { center, radius },
         baseChords: chords,
-        auxiliaryState,
+        auxiliaryState: activeAux,
         bounds: 240,
         geometryState
       };
@@ -281,20 +301,10 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // 2. POINT TOOL (Точка)
     // ==========================================
     if (isTool('POINT')) {
-      let ptType: 'free' | 'on_circle' | 'on_segment' = 'free';
-      if (snap?.entityType === 'circle') {
-        ptType = 'on_circle';
-      } else if (snap?.entityType === 'segment') {
-        ptType = 'on_segment';
+      const pRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+      if (pRes.success && pRes.pointId) {
+        onSelectEntity(pRes.pointId, 'point');
       }
-
-      executeCommand({
-        type: 'CONSTRUCT_POINT',
-        x: clickPt.x,
-        y: clickPt.y,
-        pointType: ptType,
-        parentId: snap?.entityId
-      });
       return;
     }
 
@@ -303,37 +313,32 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // ==========================================
     if (isTool('SEGMENT')) {
       if (toolStep === 0) {
-        let p1Id = snap?.entityId;
-        if (!p1Id) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: snap?.entityType === 'circle' ? 'on_circle' : 'free'
+        const p1Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p1Res.success && p1Res.pointId) {
+          setStepP1({
+            id: p1Res.pointId,
+            x: p1Res.pointCoord.x,
+            y: p1Res.pointCoord.y,
+            label: snap?.entityType === 'vertex' || snap?.entityType === 'point' ? (snap.label || p1Res.pointId) : p1Res.pointId
           });
-          p1Id = ptRes.createdEntityIds[0];
+          setToolStep(1);
         }
-        setStepP1({ id: p1Id, x: clickPt.x, y: clickPt.y, label: snap?.label || p1Id });
-        setToolStep(1);
       } else if (toolStep === 1 && stepP1) {
-        let p2Id = snap?.entityId;
-        if (!p2Id) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: snap?.entityType === 'circle' ? 'on_circle' : 'free'
-          });
-          p2Id = ptRes.createdEntityIds[0];
-        }
-
-        const res = executeCommand({
-          type: 'CONSTRUCT_SEGMENT',
-          p1Id: stepP1.id!,
-          p2Id
-        });
-        if (res.success) {
-          handleCancelTool();
+        const p2Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p2Res.success && p2Res.pointId) {
+          const res = executeCommand(
+            {
+              type: 'CONSTRUCT_SEGMENT',
+              p1Id: stepP1.id!,
+              p2Id: p2Res.pointId
+            },
+            p2Res.updatedAuxiliaryState
+          );
+          if (res.success) {
+            handleCancelTool();
+          } else if (p2Res.isDynamic) {
+            rollbackDynamicPoint(p2Res.pointId, p2Res.updatedAuxiliaryState, executeCommand);
+          }
         }
       }
       return;
@@ -344,36 +349,32 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // ==========================================
     if (isTool('RULER')) {
       if (toolStep === 0) {
-        let p1Id = snap?.entityId;
-        if (!p1Id) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: 'free'
+        const p1Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p1Res.success && p1Res.pointId) {
+          setStepP1({
+            id: p1Res.pointId,
+            x: p1Res.pointCoord.x,
+            y: p1Res.pointCoord.y,
+            label: snap?.entityType === 'vertex' || snap?.entityType === 'point' ? (snap.label || p1Res.pointId) : p1Res.pointId
           });
-          p1Id = ptRes.createdEntityIds[0];
+          setToolStep(1);
         }
-        setStepP1({ id: p1Id, x: clickPt.x, y: clickPt.y, label: snap?.label || p1Id });
-        setToolStep(1);
       } else if (toolStep === 1 && stepP1) {
-        let p2Id = snap?.entityId;
-        if (!p2Id) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: 'free'
-          });
-          p2Id = ptRes.createdEntityIds[0];
-        }
-        const res = executeCommand({
-          type: 'MEASURE_DISTANCE',
-          p1Id: stepP1.id!,
-          p2Id
-        });
-        if (res.success) {
-          handleCancelTool();
+        const p2Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p2Res.success && p2Res.pointId) {
+          const res = executeCommand(
+            {
+              type: 'MEASURE_DISTANCE',
+              p1Id: stepP1.id!,
+              p2Id: p2Res.pointId
+            },
+            p2Res.updatedAuxiliaryState
+          );
+          if (res.success) {
+            handleCancelTool();
+          } else if (p2Res.isDynamic) {
+            rollbackDynamicPoint(p2Res.pointId, p2Res.updatedAuxiliaryState, executeCommand);
+          }
         }
       }
       return;
@@ -384,38 +385,34 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // ==========================================
     if (isTool('COMPASS')) {
       if (toolStep === 0) {
-        let centerId = snap?.entityId;
-        if (!centerId) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: snap?.entityType === 'circle' ? 'on_circle' : 'free'
+        const centerRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (centerRes.success && centerRes.pointId) {
+          setStepP1({
+            id: centerRes.pointId,
+            x: centerRes.pointCoord.x,
+            y: centerRes.pointCoord.y,
+            label: snap?.entityType === 'vertex' || snap?.entityType === 'point' || snap?.entityType === 'center' ? (snap.label || centerRes.pointId) : centerRes.pointId
           });
-          centerId = ptRes.createdEntityIds[0];
+          setToolStep(1);
         }
-        setStepP1({ id: centerId, x: clickPt.x, y: clickPt.y, label: snap?.label || centerId });
-        setToolStep(1);
       } else if (toolStep === 1 && stepP1) {
-        let radiusPtId = snap?.entityId;
-        if (!radiusPtId) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: snap?.entityType === 'circle' ? 'on_circle' : 'free'
-          });
-          radiusPtId = ptRes.createdEntityIds[0];
-        }
-        const radius = euclideanDistance(stepP1.x, stepP1.y, clickPt.x, clickPt.y);
-        const res = executeCommand({
-          type: 'CONSTRUCT_COMPASS',
-          centerId: stepP1.id!,
-          radius,
-          radiusPointId: radiusPtId
-        });
-        if (res.success) {
-          handleCancelTool();
+        const radiusPtRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (radiusPtRes.success && radiusPtRes.pointId) {
+          const radius = euclideanDistance(stepP1.x, stepP1.y, radiusPtRes.pointCoord.x, radiusPtRes.pointCoord.y);
+          const res = executeCommand(
+            {
+              type: 'CONSTRUCT_COMPASS',
+              centerId: stepP1.id!,
+              radius,
+              radiusPointId: radiusPtRes.pointId
+            },
+            radiusPtRes.updatedAuxiliaryState
+          );
+          if (res.success) {
+            handleCancelTool();
+          } else if (radiusPtRes.isDynamic) {
+            rollbackDynamicPoint(radiusPtRes.pointId, radiusPtRes.updatedAuxiliaryState, executeCommand);
+          }
         }
       }
       return;
@@ -426,46 +423,50 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // ==========================================
     if (isTool('LINE_CIRCLE')) {
       if (toolStep === 0) {
-        let p1Id = snap?.entityId;
-        if (!p1Id) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: 'free'
+        const p1Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p1Res.success && p1Res.pointId) {
+          setStepP1({
+            id: p1Res.pointId,
+            x: p1Res.pointCoord.x,
+            y: p1Res.pointCoord.y,
+            label: snap?.entityType === 'vertex' || snap?.entityType === 'point' || snap?.entityType === 'center' ? (snap.label || p1Res.pointId) : p1Res.pointId
           });
-          p1Id = ptRes.createdEntityIds[0];
+          setToolStep(1);
         }
-        setStepP1({ id: p1Id, x: clickPt.x, y: clickPt.y, label: snap?.label || p1Id });
-        setToolStep(1);
       } else if (toolStep === 1 && stepP1) {
-        let p2Id = snap?.entityId;
-        if (!p2Id) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: 'free'
-          });
-          p2Id = ptRes.createdEntityIds[0];
-        }
-
-        if (lineCircleMode === 'LINE') {
-          const res = executeCommand({
-            type: 'CONSTRUCT_LINE',
-            p1Id: stepP1.id!,
-            p2Id
-          });
-          if (res.success) handleCancelTool();
-        } else {
-          const r = euclideanDistance(stepP1.x, stepP1.y, clickPt.x, clickPt.y);
-          const res = executeCommand({
-            type: 'CONSTRUCT_CIRCLE',
-            centerId: stepP1.id!,
-            radius: r,
-            radiusPointId: p2Id
-          });
-          if (res.success) handleCancelTool();
+        const p2Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p2Res.success && p2Res.pointId) {
+          if (lineCircleMode === 'LINE') {
+            const res = executeCommand(
+              {
+                type: 'CONSTRUCT_LINE',
+                p1Id: stepP1.id!,
+                p2Id: p2Res.pointId
+              },
+              p2Res.updatedAuxiliaryState
+            );
+            if (res.success) {
+              handleCancelTool();
+            } else if (p2Res.isDynamic) {
+              rollbackDynamicPoint(p2Res.pointId, p2Res.updatedAuxiliaryState, executeCommand);
+            }
+          } else {
+            const r = euclideanDistance(stepP1.x, stepP1.y, p2Res.pointCoord.x, p2Res.pointCoord.y);
+            const res = executeCommand(
+              {
+                type: 'CONSTRUCT_CIRCLE',
+                centerId: stepP1.id!,
+                radius: r,
+                radiusPointId: p2Res.pointId
+              },
+              p2Res.updatedAuxiliaryState
+            );
+            if (res.success) {
+              handleCancelTool();
+            } else if (p2Res.isDynamic) {
+              rollbackDynamicPoint(p2Res.pointId, p2Res.updatedAuxiliaryState, executeCommand);
+            }
+          }
         }
       }
       return;
@@ -476,39 +477,40 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // ==========================================
     if (isTool('PARALLEL')) {
       if (toolStep === 0) {
-        if (snap?.entityType === 'segment') {
+        if (snap?.entityType === 'segment' || snap?.entityType === 'line') {
           setRefEntity({ id: snap.entityId!, type: 'segment', label: snap.label });
           setToolStep(1);
-        } else if (snap?.entityType === 'vertex' || snap?.entityType === 'point' || snap?.entityType === 'center') {
-          setStepP1({ id: snap.entityId, x: clickPt.x, y: clickPt.y, label: snap.label });
-          setToolStep(1);
         } else {
-          showToast('Кликните опорный отрезок или точку');
+          const ptRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+          if (ptRes.success && ptRes.pointId) {
+            setStepP1({ id: ptRes.pointId, x: ptRes.pointCoord.x, y: ptRes.pointCoord.y, label: snap?.label || ptRes.pointId });
+            setToolStep(1);
+          }
         }
       } else if (toolStep === 1) {
         let segId = refEntity?.id;
         let ptId = stepP1?.id;
+        let currentAux = auxiliaryState;
 
-        if (refEntity && (snap?.entityType === 'vertex' || snap?.entityType === 'point' || snap?.entityType === 'center')) {
-          ptId = snap.entityId;
-        } else if (stepP1 && snap?.entityType === 'segment') {
+        if (refEntity) {
+          const ptRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+          if (ptRes.success && ptRes.pointId) {
+            ptId = ptRes.pointId;
+            currentAux = ptRes.updatedAuxiliaryState;
+          }
+        } else if (stepP1 && (snap?.entityType === 'segment' || snap?.entityType === 'line')) {
           segId = snap.entityId;
-        } else if (refEntity && !snap) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: 'free'
-          });
-          ptId = ptRes.createdEntityIds[0];
         }
 
         if (segId && ptId) {
-          const res = executeCommand({
-            type: 'CONSTRUCT_PARALLEL',
-            referenceSegmentId: segId,
-            throughPointId: ptId
-          });
+          const res = executeCommand(
+            {
+              type: 'CONSTRUCT_PARALLEL',
+              referenceSegmentId: segId,
+              throughPointId: ptId
+            },
+            currentAux
+          );
           if (res.success) handleCancelTool();
         }
       }
@@ -520,39 +522,40 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // ==========================================
     if (isTool('PERPENDICULAR')) {
       if (toolStep === 0) {
-        if (snap?.entityType === 'segment') {
+        if (snap?.entityType === 'segment' || snap?.entityType === 'line') {
           setRefEntity({ id: snap.entityId!, type: 'segment', label: snap.label });
           setToolStep(1);
-        } else if (snap?.entityType === 'vertex' || snap?.entityType === 'point' || snap?.entityType === 'center') {
-          setStepP1({ id: snap.entityId, x: clickPt.x, y: clickPt.y, label: snap.label });
-          setToolStep(1);
         } else {
-          showToast('Кликните опорный отрезок или точку');
+          const ptRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+          if (ptRes.success && ptRes.pointId) {
+            setStepP1({ id: ptRes.pointId, x: ptRes.pointCoord.x, y: ptRes.pointCoord.y, label: snap?.label || ptRes.pointId });
+            setToolStep(1);
+          }
         }
       } else if (toolStep === 1) {
         let segId = refEntity?.id;
         let ptId = stepP1?.id;
+        let currentAux = auxiliaryState;
 
-        if (refEntity && (snap?.entityType === 'vertex' || snap?.entityType === 'point' || snap?.entityType === 'center')) {
-          ptId = snap.entityId;
-        } else if (stepP1 && snap?.entityType === 'segment') {
+        if (refEntity) {
+          const ptRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+          if (ptRes.success && ptRes.pointId) {
+            ptId = ptRes.pointId;
+            currentAux = ptRes.updatedAuxiliaryState;
+          }
+        } else if (stepP1 && (snap?.entityType === 'segment' || snap?.entityType === 'line')) {
           segId = snap.entityId;
-        } else if (refEntity && !snap) {
-          const ptRes = executeCommand({
-            type: 'CONSTRUCT_POINT',
-            x: clickPt.x,
-            y: clickPt.y,
-            pointType: 'free'
-          });
-          ptId = ptRes.createdEntityIds[0];
         }
 
         if (segId && ptId) {
-          const res = executeCommand({
-            type: 'CONSTRUCT_PERPENDICULAR',
-            referenceSegmentId: segId,
-            throughPointId: ptId
-          });
+          const res = executeCommand(
+            {
+              type: 'CONSTRUCT_PERPENDICULAR',
+              referenceSegmentId: segId,
+              throughPointId: ptId
+            },
+            currentAux
+          );
           if (res.success) handleCancelTool();
         }
       }
@@ -564,34 +567,35 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     // ==========================================
     if (isTool('ANGLE_BISECTOR')) {
       if (toolStep === 0) {
-        let p1Id = snap?.entityId;
-        if (!p1Id) {
-          const ptRes = executeCommand({ type: 'CONSTRUCT_POINT', x: clickPt.x, y: clickPt.y, pointType: 'free' });
-          p1Id = ptRes.createdEntityIds[0];
+        const p1Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p1Res.success && p1Res.pointId) {
+          setStepP1({ id: p1Res.pointId, x: p1Res.pointCoord.x, y: p1Res.pointCoord.y, label: snap?.label || p1Res.pointId });
+          setToolStep(1);
         }
-        setStepP1({ id: p1Id, x: clickPt.x, y: clickPt.y, label: snap?.label || p1Id });
-        setToolStep(1);
       } else if (toolStep === 1 && stepP1) {
-        let p2Id = snap?.entityId;
-        if (!p2Id) {
-          const ptRes = executeCommand({ type: 'CONSTRUCT_POINT', x: clickPt.x, y: clickPt.y, pointType: 'free' });
-          p2Id = ptRes.createdEntityIds[0];
+        const p2Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p2Res.success && p2Res.pointId) {
+          setStepP2({ id: p2Res.pointId, x: p2Res.pointCoord.x, y: p2Res.pointCoord.y, label: snap?.label || p2Res.pointId });
+          setToolStep(2);
         }
-        setStepP2({ id: p2Id, x: clickPt.x, y: clickPt.y, label: snap?.label || p2Id });
-        setToolStep(2);
       } else if (toolStep === 2 && stepP1 && stepP2) {
-        let p3Id = snap?.entityId;
-        if (!p3Id) {
-          const ptRes = executeCommand({ type: 'CONSTRUCT_POINT', x: clickPt.x, y: clickPt.y, pointType: 'free' });
-          p3Id = ptRes.createdEntityIds[0];
+        const p3Res = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+        if (p3Res.success && p3Res.pointId) {
+          const res = executeCommand(
+            {
+              type: 'CONSTRUCT_ANGLE_BISECTOR',
+              arm1PointId: stepP1.id!,
+              vertexPointId: stepP2.id!,
+              arm2PointId: p3Res.pointId
+            },
+            p3Res.updatedAuxiliaryState
+          );
+          if (res.success) {
+            handleCancelTool();
+          } else if (p3Res.isDynamic) {
+            rollbackDynamicPoint(p3Res.pointId, p3Res.updatedAuxiliaryState, executeCommand);
+          }
         }
-        const res = executeCommand({
-          type: 'CONSTRUCT_ANGLE_BISECTOR',
-          arm1PointId: stepP1.id!,
-          vertexPointId: stepP2.id!,
-          arm2PointId: p3Id
-        });
-        if (res.success) handleCancelTool();
       }
       return;
     }
@@ -623,26 +627,34 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     }
 
     // ==========================================
-    // 11. INTERSECTION TOOL (Пересечение)
+    // 11. TANGENT TOOL (Касательная)
     // ==========================================
-    if (isTool('INTERSECTION')) {
-      if (toolStep === 0) {
-        if (snap?.entityType === 'segment') {
-          setRefEntity({ id: snap.entityId!, type: 'segment', label: snap.label });
-          setToolStep(1);
-        } else {
-          showToast('Кликните первый отрезок или прямую для пересечения');
-        }
-      } else if (toolStep === 1 && refEntity) {
-        if (snap?.entityType === 'segment') {
-          const res = executeCommand({
-            type: 'CONSTRUCT_INTERSECTION',
-            entity1Id: refEntity.id,
-            entity2Id: snap.entityId!
-          });
-          if (res.success) handleCancelTool();
-        } else {
-          showToast('Кликните второй отрезок для пересечения');
+    if (isTool('TANGENT')) {
+      const pRes = resolveOrCreatePoint(clickPt, snap, { currentAuxiliaryState: auxiliaryState, executeCommand });
+      if (pRes.success && pRes.pointId) {
+        const res = executeCommand(
+          {
+            type: 'CONSTRUCT_TANGENT',
+            circleId: 'circle_main',
+            pointId: pRes.pointId
+          },
+          pRes.updatedAuxiliaryState
+        );
+        if (res.success) {
+          if (tangentQuantity === 1) {
+            handleCancelTool();
+            onSelectTool('SELECT');
+          } else {
+            // Mode = 2
+            if (tangentStep === 0) {
+              setTangentStep(1);
+            } else {
+              handleCancelTool();
+              onSelectTool('SELECT');
+            }
+          }
+        } else if (pRes.isDynamic) {
+          rollbackDynamicPoint(pRes.pointId, pRes.updatedAuxiliaryState, executeCommand);
         }
       }
       return;
@@ -824,6 +836,20 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
             ? 'Кликните первую вершину четырёхугольника'
             : `Кликните противоположную вершину (для ${stepP1!.id} это ${stepP1!.id === 'A' ? 'C' : stepP1!.id === 'B' ? 'D' : stepP1!.id === 'C' ? 'A' : 'B'})`
         };
+      case 'TANGENT':
+        if (tangentQuantity === 1) {
+          return {
+            title: 'Инструмент «Касательная» (1 касательная)',
+            subtitle: 'Кликните точку на окружности S¹ для построения касательной'
+          };
+        } else {
+          return {
+            title: 'Инструмент «Касательная» (2 касательные)',
+            subtitle: tangentStep === 0
+              ? 'Шаг 1 из 2: Кликните первую точку на окружности S¹'
+              : 'Шаг 2 из 2: Кликните вторую точку на окружности S¹'
+          };
+        }
       case 'INTERSECTION':
         return {
           title: 'Инструмент «Пересечение»',
@@ -885,6 +911,31 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
               className={`px-2 py-0.5 rounded ${lineCircleMode === 'CIRCLE' ? 'bg-purple-600 text-white font-medium' : 'text-slate-400 hover:text-slate-200'}`}
             >
               Окружность
+            </button>
+          </div>
+        )}
+
+        {/* Submode toggle for Tangent Quantity */}
+        {isTool('TANGENT') && (
+          <div className="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700 text-[11px] gap-1 px-1">
+            <span className="text-slate-400 text-[10px] uppercase font-mono px-1">Количество:</span>
+            <button
+              type="button"
+              onClick={() => { onSetTangentQuantity?.(1); setTangentStep(0); }}
+              className={`px-2 py-0.5 rounded transition-all ${
+                tangentQuantity === 1 ? 'bg-purple-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              1
+            </button>
+            <button
+              type="button"
+              onClick={() => { onSetTangentQuantity?.(2); setTangentStep(0); }}
+              className={`px-2 py-0.5 rounded transition-all ${
+                tangentQuantity === 2 ? 'bg-purple-600 text-white font-bold shadow-sm' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              2
             </button>
           </div>
         )}
@@ -1602,6 +1653,36 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
                     strokeDasharray="5 3"
                   />
                 );
+              })()}
+            </g>
+          )}
+
+          {/* Tangent Live Preview */}
+          {isTool('TANGENT') && (
+            <g id="tangent-preview">
+              {(() => {
+                const targetPt = snapTarget ? { x: snapTarget.x, y: snapTarget.y } : cursorWorld;
+                const rx = targetPt.x - center.x;
+                const ry = targetPt.y - center.y;
+                const dist = Math.hypot(rx, ry);
+                if (dist > 1e-4) {
+                  const angle = Math.atan2(ry, rx);
+                  const circX = center.x + radius * Math.cos(angle);
+                  const circY = center.y + radius * Math.sin(angle);
+                  const ext = computeExtendedLineEndpoints({ x: circX, y: circY }, -Math.sin(angle), Math.cos(angle));
+                  return (
+                    <line
+                      x1={ext.x1}
+                      y1={ext.y1}
+                      x2={ext.x2}
+                      y2={ext.y2}
+                      stroke="#38bdf8"
+                      strokeWidth="1.8"
+                      strokeDasharray="5 3"
+                    />
+                  );
+                }
+                return null;
               })()}
             </g>
           )}

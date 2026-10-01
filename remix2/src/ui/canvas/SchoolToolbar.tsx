@@ -29,7 +29,7 @@ import {
   GitCommit,
   Divide,
   CornerDownRight,
-  Crosshair,
+  Tangent as TangentIcon,
   Eraser
 } from 'lucide-react';
 import { CanonicalToolId } from '../types/uiTypes';
@@ -114,11 +114,11 @@ export const CANONICAL_TOOLS: readonly ToolItem[] = [
     icon: <CornerDownRight className="w-4 h-4" />
   },
   {
-    id: 'INTERSECTION',
-    labelRu: 'Пересечение',
-    labelEn: 'Intersection',
-    descRu: 'Точка пересечения двух отрезков или прямых P = L₁ ∩ L₂',
-    icon: <Crosshair className="w-4 h-4" />
+    id: 'TANGENT',
+    labelRu: 'Касательная',
+    labelEn: 'Tangent',
+    descRu: 'Касательная к окружности в выбранной точке',
+    icon: <TangentIcon className="w-4 h-4" />
   },
   {
     id: 'ERASER',
@@ -132,42 +132,103 @@ export const CANONICAL_TOOLS: readonly ToolItem[] = [
 interface SchoolToolbarProps {
   readonly activeTool: CanonicalToolId;
   readonly onSelectTool: (tool: CanonicalToolId) => void;
+  readonly tangentQuantity?: 1 | 2;
+  readonly onSetTangentQuantity?: (qty: 1 | 2) => void;
 }
 
 export const SchoolToolbar: React.FC<SchoolToolbarProps> = ({
   activeTool,
-  onSelectTool
+  onSelectTool,
+  tangentQuantity = 1,
+  onSetTangentQuantity
 }) => {
   return (
     <aside className="absolute left-3 top-24 z-20 flex flex-col gap-1 p-1 bg-slate-900/90 backdrop-blur-sm border border-slate-800 rounded-xl shadow-2xl touch-none">
       {CANONICAL_TOOLS.map((tool) => {
         const isActive = activeTool === tool.id;
+        const isTangent = tool.id === 'TANGENT';
 
         return (
-          <button
-            key={tool.id}
-            onClick={() => onSelectTool(tool.id)}
-            aria-label={tool.labelRu}
-            title={tool.labelRu}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all relative group ${
-              isActive
-                ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400'
-                : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 active:bg-slate-700'
-            }`}
-          >
-            {tool.icon}
+          <div key={tool.id} className="relative flex items-center group">
+            <button
+              type="button"
+              onClick={() => onSelectTool(tool.id)}
+              aria-label={tool.labelRu}
+              title={isTangent ? `${tool.labelRu} — количество: ${tangentQuantity}` : tool.labelRu}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all relative ${
+                isActive
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 ring-2 ring-purple-400'
+                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/80 active:bg-slate-700'
+              }`}
+            >
+              {tool.icon}
 
-            {/* Floating Tooltip on Hover */}
-            <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-950 text-slate-200 border border-slate-800 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-xl">
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-purple-300">{tool.labelRu}</span>
-                <span className="text-[10px] text-slate-500 font-mono">({tool.labelEn})</span>
+              {/* Tangent Quantity Badge */}
+              {isTangent && (
+                <span
+                  data-testid="tangent-quantity-badge"
+                  className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-0.5 flex items-center justify-center bg-purple-950 border border-purple-400/80 rounded-full text-[9px] font-bold text-purple-200 font-mono shadow-sm"
+                  title={`Количество касательных: ${tangentQuantity}`}
+                >
+                  {tangentQuantity}
+                </span>
+              )}
+            </button>
+
+            {/* Sub-selector for Tangent when active */}
+            {isTangent && isActive && onSetTangentQuantity && (
+              <div className="absolute left-full ml-1.5 flex items-center bg-slate-950/95 border border-purple-500/50 rounded-lg p-0.5 shadow-xl z-30 gap-0.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSetTangentQuantity(1);
+                  }}
+                  className={`w-5 h-5 flex items-center justify-center rounded text-[11px] font-bold font-mono transition-all ${
+                    tangentQuantity === 1
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                  title="Построить 1 касательную"
+                >
+                  1
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSetTangentQuantity(2);
+                  }}
+                  className={`w-5 h-5 flex items-center justify-center rounded text-[11px] font-bold font-mono transition-all ${
+                    tangentQuantity === 2
+                      ? 'bg-purple-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  }`}
+                  title="Построить 2 касательные"
+                >
+                  2
+                </button>
               </div>
-              <span className="text-slate-400 block text-[11px] mt-0.5 max-w-xs whitespace-normal">
-                {tool.descRu}
-              </span>
-            </div>
-          </button>
+            )}
+
+            {/* Floating Tooltip on Hover (hidden when tangent sub-selector is active) */}
+            {!(isTangent && isActive) && (
+              <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-950 text-slate-200 border border-slate-800 rounded-md text-xs whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 shadow-xl">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-purple-300">{tool.labelRu}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">({tool.labelEn})</span>
+                  {isTangent && (
+                    <span className="px-1 py-0.2 rounded bg-purple-900/60 border border-purple-500/40 text-[10px] text-purple-200 font-mono">
+                      кол-во: {tangentQuantity}
+                    </span>
+                  )}
+                </div>
+                <span className="text-slate-400 block text-[11px] mt-0.5 max-w-xs whitespace-normal">
+                  {tool.descRu}
+                </span>
+              </div>
+            )}
+          </div>
         );
       })}
     </aside>

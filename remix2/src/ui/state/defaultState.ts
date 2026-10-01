@@ -7,7 +7,7 @@ import { UniversalGeometryState } from '../../kernel/state/geometryState';
 import { PresetType } from '../types/uiTypes';
 
 export const CANONICAL_CENTER = { id: 'O', x: 0, y: 0 };
-export const CANONICAL_RADIUS = 100.0; // In millimeters / canonical units
+export const CANONICAL_RADIUS = 160.0; // In millimeters / canonical units (aligned with auxiliary DAG and viewport)
 
 /**
  * Creates the default initial cyclic quadrilateral state.

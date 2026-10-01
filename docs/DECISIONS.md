@@ -129,3 +129,55 @@ This document records the foundational architectural decisions governing Geometr
 * **Context:** Autonomous agents need to query specific entity measurements, capture active snapshots, and compute mathematical deltas between two experimental states.
 * **Decision:** Implement `GET_ACTIVE_SNAPSHOT` and `GET_ENTITY_MEASUREMENT` as read-only semantic commands, and `diffGeometrySnapshots(snapA, snapB)` as a pure DTO comparison function (subtraction $after - before$). These utilities are strictly forbidden from performing new geometric calculations or formula duplication.
 * **Reason:** Preserves the foundational axiom: *Agent May Be Wrong. The Stand Must Not.* The stand provides raw verified facts; the agent interprets them.
+
+---
+
+## ADR-015 — Two-Plane Independent State Model (`PLANE_1` & `PLANE_2`)
+
+* **Status:** ACCEPTED / IMPLEMENTED
+* **Context:** Exploratory geometric research requires comparing live deformations with a fixed canonical reference benchmark without losing active work or causing state pollution.
+* **Decision:** Encapsulate stand research sessions in a `ResearchSession` containing two completely isolated plane sessions (`plane1` and `plane2`). Plane 1 serves as the mutable experimental scratchpad. Plane 2 acts as a reference baseline that can transition to `FIXED`. When `FIXED`, mutations directed to Plane 2 are rejected with `PLANE_FIXED_READ_ONLY`, while Plane 1 remains fully mutable.
+* **Reason:** Prevents accidental modification of baseline references during active deformation studies.
+
+---
+
+## ADR-016 — Point-First Universal Construction Protocol
+
+* **Status:** ACCEPTED / IMPLEMENTED
+* **Context:** Multi-step straightedge/compass tools (e.g. connecting a free point to a point on a chord or circle) previously suffered from orphan dynamic points and premature tool cancellation when attempting to pass segment IDs as endpoints.
+* **Decision:** Implement universal two-phase point resolution (`resolveOrCreatePoint`):
+  1. Points on chords/segments (`on_segment`) or circles (`on_circle`) are resolved and committed dynamically into `auxiliaryState.points` before segment or line creation.
+  2. Construction commands consume strictly point IDs (`p1Id`, `p2Id`).
+  3. If construction commitment fails, dynamic points are atomically rolled back (`rollbackDynamicPoint`).
+* **Reason:** Guarantees zero orphan points, unambiguous entity references, and robust multi-step construction lifecycles.
+
+---
+
+## ADR-017 — Same-Stand Construction Clone via Topological DAG Remapping
+
+* **Status:** ACCEPTED / IMPLEMENTED
+* **Context:** Transferring constructions from Plane 1 to Plane 2 must reproduce the geometric construction without sharing mutable memory references or causing ID collisions.
+* **Decision:** Implement `clonePlane1ToPlane2` using domain profile deep cloning and a topological DAG remapping ledger (`idMap`). Auxiliary objects receive independent Plane 2 IDs (`p2_pt_...`, `p2_seg_...`), and all parent references are remapped. If Plane 2 is `FIXED`, cloning is rejected.
+* **Reason:** Preserves the Construction DAG and memory isolation without relying on visual/SVG scrapers.
+
+---
+
+## ADR-018 — Tangent Tool Semantics & Session Quantity UX Setting
+
+* **Status:** ACCEPTED / IMPLEMENTED
+* **Context:** Constructing tangents to the circumcircle $S^1$ requires clean mathematical semantics, and users often need to construct either 1 or 2 tangents in a focused workflow without endless active states.
+* **Decision:** 
+  1. Implement `CONSTRUCT_TANGENT` using pure perpendicularity ($\vec{u} \perp \vec{r}$) and DAG lineage `['circle_main', pointId]`.
+  2. Implement an interactive tool quantity setting (`tangentQuantity: 1 | 2`, default `1`): Mode 1 completes immediately after 1 tangent; Mode 2 completes after 2 tangents.
+  3. Pressing ESC after the 1st tangent in Mode 2 commits the 1st tangent and cancels only the pending 2nd operation.
+* **Reason:** Delivers predictable, non-intrusive interactive ergonomics while adhering to strict geometric invariants.
+
+---
+
+## ADR-019 — Decoupling Human UI Capabilities from Agent Access Audits
+
+* **Status:** ACCEPTED / IMPLEMENTED
+* **Context:** Introducing new UI controls (such as tool quantity toggles or UI clone buttons) creates a risk that external reasoning engines assume autonomous agents automatically possess equivalent headless capabilities.
+* **Decision:** Maintain a strict epistemic distinction between Human UI Path and Agent Path. Capabilities implemented in UI components remain marked as `NOT YET AGENT-AUDITED` until corresponding headless agent integration test scenarios are formally executed and verified.
+* **Reason:** Preserves the Prime Constitutional Axiom and prevents hallucinated agent capabilities during external model reviews.
+

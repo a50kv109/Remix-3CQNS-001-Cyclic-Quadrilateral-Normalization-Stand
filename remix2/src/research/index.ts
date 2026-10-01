@@ -61,6 +61,14 @@ export function createGeometryStateSnapshot(
       },
       cyclicAngles
     };
+  } else {
+    // Provide standard referenceCircle parameter for CARTESIAN profiles to support research mapping
+    parameters = {
+      referenceCircle: {
+        center: { id: 'O', x: 0, y: 0 },
+        radius: 160.0
+      }
+    };
   }
 
   // 3. Points (Canonical projected points + auxiliary points)

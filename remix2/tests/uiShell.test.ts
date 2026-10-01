@@ -85,7 +85,7 @@ const initialUiState: UIState = {
   // State remains completely unchanged
   assert.equal(state.stateVersion, vBefore);
   const input = state.canonicalInputs as CyclicInput;
-  assert.equal(input.referenceCircle.radius, 100);
+  assert.equal(input.referenceCircle.radius, 160);
 
   // Derived vertices retain their canonical Cartesian coords regardless of UI view rotation
   assert.equal(presentation.vertices.length, 4);

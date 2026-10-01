@@ -846,7 +846,91 @@ export function dispatchSemanticCommand(
     }
 
     // ============================================================
-    // 12. CONSTRUCT_INTERSECTION COMMAND
+    // 12. CONSTRUCT_TANGENT COMMAND
+    // ============================================================
+    case 'CONSTRUCT_TANGENT': {
+      const pt = resolvePoint(command.pointId, ctx);
+      if (!pt) {
+        return {
+          status: 'MISSING_ENTITY',
+          commandType: 'CONSTRUCT_TANGENT',
+          success: false,
+          createdEntityIds: [],
+          affectedEntityIds: [],
+          updatedAuxiliaryState: currentAux,
+          message: `Missing point on circle for tangent: ${command.pointId}`
+        };
+      }
+
+      // Check distance from circumcircle center
+      const center = ctx.circumcircle.center;
+      const radius = ctx.circumcircle.radius;
+      const rx = pt.x - center.x;
+      const ry = pt.y - center.y;
+      const distFromCenter = Math.hypot(rx, ry);
+
+      if (distFromCenter < 1e-4) {
+        return {
+          status: 'INVALID_GEOMETRY',
+          commandType: 'CONSTRUCT_TANGENT',
+          success: false,
+          createdEntityIds: [],
+          affectedEntityIds: [],
+          updatedAuxiliaryState: currentAux,
+          message: 'Cannot construct tangent at center of circle'
+        };
+      }
+
+      // Verify point is on the circumcircle within tolerance (or constructed on circle)
+      const diffFromCirc = Math.abs(distFromCenter - radius);
+      if (diffFromCirc > 15) {
+        return {
+          status: 'INVALID_GEOMETRY',
+          commandType: 'CONSTRUCT_TANGENT',
+          success: false,
+          createdEntityIds: [],
+          affectedEntityIds: [],
+          updatedAuxiliaryState: currentAux,
+          message: `Point ${resolvePointLabel(command.pointId, ctx)} is not on circumcircle S¹ (diff: ${diffFromCirc.toFixed(1)} mm)`
+        };
+      }
+
+      // Tangent direction is perpendicular to radius vector (rx, ry) -> (-ry, rx)
+      const ux = -ry / distFromCenter;
+      const uy = rx / distFromCenter;
+
+      const lineId = `tangent_${command.pointId}`;
+      const circleId = command.circleId || 'circle_main';
+      const label = `Касательная в ${resolvePointLabel(command.pointId, ctx)}`;
+
+      const newTangent: AuxiliaryLine = {
+        id: lineId,
+        label,
+        type: 'tangent',
+        throughPointId: command.pointId,
+        anchorPoint: { x: pt.x, y: pt.y },
+        direction: { dx: ux, dy: uy },
+        color: '#38bdf8'
+      };
+
+      const updatedAux: AuxiliaryState = {
+        ...currentAux,
+        lines: [...currentAux.lines.filter((l) => l.id !== lineId), newTangent]
+      };
+
+      return {
+        status: 'SUCCESS',
+        commandType: 'CONSTRUCT_TANGENT',
+        success: true,
+        createdEntityIds: [lineId],
+        affectedEntityIds: [lineId, command.pointId, circleId],
+        updatedAuxiliaryState: updatedAux,
+        message: `Tangent line ${label} constructed at point ${resolvePointLabel(command.pointId, ctx)}`
+      };
+    }
+
+    // ============================================================
+    // 13. CONSTRUCT_INTERSECTION COMMAND
     // ============================================================
     case 'CONSTRUCT_INTERSECTION': {
       if (command.entity1Id === command.entity2Id) {

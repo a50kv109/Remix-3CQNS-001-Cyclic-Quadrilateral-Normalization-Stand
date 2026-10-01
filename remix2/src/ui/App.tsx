@@ -22,6 +22,7 @@ import { CyclicMutationDraft, CartesianMutationDraft } from '../types/geometry';
 import { AuxiliaryState } from './types/auxiliaryTypes';
 import { createEmptyAuxiliaryState, recomputeAuxiliaryGeometry } from './state/auxiliaryEngine';
 import { createGeometryStateSnapshot, mapSnapshotsToResearchRows, GeometryResearchRow } from '../research/index';
+import { clonePlane1ToPlane2 } from '../research/planeClone';
 
 export const App: React.FC = () => {
   // Research Session State
@@ -38,52 +39,80 @@ export const App: React.FC = () => {
   const [auxiliaryState, setAuxiliaryState] = useState<AuxiliaryState>(() =>
     createEmptyAuxiliaryState()
   );
+  const [tangentQuantity, setTangentQuantity] = useState<1 | 2>(1);
 
   const toggleActivePlane = useCallback((targetPlane: PlaneId) => {
-    setResearchSession((prevSession) => {
-      if (prevSession.activePlane === targetPlane) return prevSession;
+    if (researchSession.activePlane === targetPlane) return;
 
-      const currentGeo = geometryState;
-      const currentAux = auxiliaryState;
+    // 1. Snapshot current active plane state
+    const currentGeo = geometryState;
+    const currentAux = auxiliaryState;
 
-      const updatedPlane1 = prevSession.activePlane === 'PLANE_1'
-        ? { geoState: currentGeo, auxState: currentAux }
-        : prevSession.plane1;
+    const updatedPlane1 = researchSession.activePlane === 'PLANE_1'
+      ? { geoState: currentGeo, auxState: currentAux }
+      : researchSession.plane1;
 
-      const updatedPlane2 = prevSession.activePlane === 'PLANE_2'
-        ? { geoState: currentGeo, auxState: currentAux }
-        : prevSession.plane2;
+    const updatedPlane2 = researchSession.activePlane === 'PLANE_2'
+      ? { geoState: currentGeo, auxState: currentAux }
+      : researchSession.plane2;
 
-      const nextTarget = targetPlane === 'PLANE_1' ? updatedPlane1 : updatedPlane2;
+    const nextTarget = targetPlane === 'PLANE_1' ? updatedPlane1 : updatedPlane2;
 
-      setGeometryState(nextTarget.geoState);
-      setAuxiliaryState(nextTarget.auxState);
+    // 2. Synchronize working states outside of any functional updater
+    setGeometryState(nextTarget.geoState);
+    setAuxiliaryState(nextTarget.auxState);
 
-      return {
-        ...prevSession,
-        plane1: updatedPlane1,
-        plane2: updatedPlane2,
-        activePlane: targetPlane
-      };
+    // 3. Update session state cleanly
+    setResearchSession({
+      ...researchSession,
+      plane1: updatedPlane1,
+      plane2: updatedPlane2,
+      activePlane: targetPlane
     });
-  }, [geometryState, auxiliaryState]);
+  }, [researchSession, geometryState, auxiliaryState]);
 
   const fixPlane2 = useCallback(() => {
-    setResearchSession((prevSession) => {
-      const currentGeo = geometryState;
-      const currentAux = auxiliaryState;
+    const currentGeo = geometryState;
+    const currentAux = auxiliaryState;
 
-      const updatedPlane2 = prevSession.activePlane === 'PLANE_2'
-        ? { geoState: currentGeo, auxState: currentAux }
-        : prevSession.plane2;
+    const updatedPlane2 = researchSession.activePlane === 'PLANE_2'
+      ? { geoState: currentGeo, auxState: currentAux }
+      : researchSession.plane2;
 
-      return {
-        ...prevSession,
-        plane2: updatedPlane2,
-        plane2Lifecycle: 'FIXED'
-      };
+    setResearchSession({
+      ...researchSession,
+      plane2: updatedPlane2,
+      plane2Lifecycle: 'FIXED'
     });
-  }, [geometryState, auxiliaryState]);
+  }, [researchSession, geometryState, auxiliaryState]);
+
+  const handleClonePlane1ToPlane2 = useCallback(() => {
+    const currentPlane1 = researchSession.activePlane === 'PLANE_1'
+      ? { geoState: geometryState, auxState: auxiliaryState }
+      : researchSession.plane1;
+
+    const currentPlane2 = researchSession.activePlane === 'PLANE_2'
+      ? { geoState: geometryState, auxState: auxiliaryState }
+      : researchSession.plane2;
+
+    const activeSession: ResearchSession = {
+      ...researchSession,
+      plane1: currentPlane1,
+      plane2: currentPlane2
+    };
+
+    const cloneRes = clonePlane1ToPlane2(activeSession);
+    if (!cloneRes.success) {
+      return;
+    }
+
+    setResearchSession(cloneRes.session);
+
+    if (researchSession.activePlane === 'PLANE_2') {
+      setGeometryState(cloneRes.session.plane2.geoState);
+      setAuxiliaryState(cloneRes.session.plane2.auxState);
+    }
+  }, [researchSession, geometryState, auxiliaryState]);
 
 
   // Undo history buffer
@@ -156,59 +185,57 @@ export const App: React.FC = () => {
         }
       });
 
-      setAuxiliaryState((prev) => {
-        const nextAux = recomputeAuxiliaryGeometry(prev, pointsMap, {
-          center: { id: 'O', x: 0, y: 0 },
-          radius: 160
-        });
-
-        // Also sync active plane in researchSession if in RESEARCH mode
-        if (uiState?.standMode === 'RESEARCH') {
-          setResearchSession((prevSession) => {
-            if (prevSession.activePlane === 'PLANE_1') {
-              return {
-                ...prevSession,
-                plane1: { geoState: nextGeoState, auxState: nextAux }
-              };
-            } else {
-              if (prevSession.plane2Lifecycle === 'FIXED') {
-                return prevSession;
-              }
-              return {
-                ...prevSession,
-                plane2: { geoState: nextGeoState, auxState: nextAux }
-              };
-            }
-          });
-        }
-
-        // Record research row purely from snapshot
-        try {
-
-          const snap = createGeometryStateSnapshot(nextGeoState, nextAux);
-          let paramName = 'θ_A';
-          let paramVal = 0;
-          if (nextGeoState.domainProfile === 'CYCLIC') {
-            const angles = (nextGeoState.canonicalInputs as any).angles;
-            if (angles && angles.length > 0) {
-              paramVal = Number(((angles[0] * 180) / Math.PI).toFixed(1));
-            }
-          }
-          setResearchRows((prevRows) => {
-            const nextStep = prevRows.length;
-            const newRows = mapSnapshotsToResearchRows([snap], [{
-              step: nextStep,
-              parameterName: paramName,
-              parameterValue: paramVal
-            }]);
-            return [...prevRows, ...newRows];
-          });
-        } catch {
-          // Ignore projection failures in auxiliary updates
-        }
-
-        return nextAux;
+      const nextAux = recomputeAuxiliaryGeometry(auxiliaryState, pointsMap, {
+        center: { id: 'O', x: 0, y: 0 },
+        radius: 160
       });
+
+      setAuxiliaryState(nextAux);
+
+      // Also sync active plane in researchSession if in RESEARCH mode
+      if (uiState?.standMode === 'RESEARCH') {
+        setResearchSession((prevSession) => {
+          if (prevSession.activePlane === 'PLANE_1') {
+            return {
+              ...prevSession,
+              plane1: { geoState: nextGeoState, auxState: nextAux }
+            };
+          } else {
+            if (prevSession.plane2Lifecycle === 'FIXED') {
+              return prevSession;
+            }
+            return {
+              ...prevSession,
+              plane2: { geoState: nextGeoState, auxState: nextAux }
+            };
+          }
+        });
+      }
+
+      // Record research row purely from snapshot
+      try {
+        const snap = createGeometryStateSnapshot(nextGeoState, nextAux);
+        let paramName = 'θ_A';
+        let paramVal = 0;
+        if (nextGeoState.domainProfile === 'CYCLIC') {
+          const angles = (nextGeoState.canonicalInputs as any).angles;
+          if (angles && angles.length > 0) {
+            paramVal = Number(((angles[0] * 180) / Math.PI).toFixed(1));
+          }
+        }
+        setResearchRows((prevRows) => {
+          const nextStep = prevRows.length;
+          const mapped = mapSnapshotsToResearchRows([snap], [{
+            step: 0,
+            parameterName: paramName,
+            parameterValue: paramVal
+          }]);
+          const newRows = mapped.map(r => ({ ...r, step: nextStep }));
+          return [...prevRows, ...newRows];
+        });
+      } catch {
+        // Ignore projection failures in auxiliary updates
+      }
     },
     [geometryState, auxiliaryState]
   );
@@ -529,8 +556,9 @@ export const App: React.FC = () => {
           {uiState.standMode === 'RESEARCH' && researchSession && (
             <ResearchPlaneControls
               session={researchSession}
-              onTogglePlane={(plane) => setResearchSession(prev => ({ ...prev!, activePlane: plane }))}
-              onFixPlane2={() => setResearchSession(prev => ({ ...prev!, plane2Lifecycle: 'FIXED' }))}
+              onTogglePlane={toggleActivePlane}
+              onFixPlane2={fixPlane2}
+              onClonePlane1ToPlane2={handleClonePlane1ToPlane2}
             />
           )}
 
@@ -538,6 +566,8 @@ export const App: React.FC = () => {
           <SchoolToolbar
             activeTool={uiState.activeTool}
             onSelectTool={handleSelectTool}
+            tangentQuantity={tangentQuantity}
+            onSetTangentQuantity={setTangentQuantity}
           />
 
           {/* Core SVG Canvas with all 12 active tools & dynamic auxiliary rendering */}
@@ -558,6 +588,8 @@ export const App: React.FC = () => {
               onUpdateGeometryState={syncStateAndAuxiliary}
               activePlane={uiState.standMode === 'RESEARCH' ? researchSession?.activePlane : 'PLANE_1'}
               researchSession={researchSession ?? undefined}
+              tangentQuantity={tangentQuantity}
+              onSetTangentQuantity={setTangentQuantity}
             />
           </div>
 

@@ -1,174 +1,184 @@
-# Geometry Reasoning Stand 2 — Architecture
+# Geometry Reasoning Stand — Architecture Specification (Remix 2 & Remix 3)
 
-**Status:** Living Architectural Specification (v0.1)
+**Status:** Living Architectural Specification (Remix 3 Current State)
 
 ---
 
 ## 1. General Architectural Hierarchy
 
-Geometry Reasoning Stand 2 (Remix 2) is organized into five strictly decoupled horizontal layers:
+Geometry Reasoning Stand is organized into strictly decoupled horizontal layers with two-plane operational research support:
 
 ```text
-                      GEOMETRY REASONING STAND 2
-                                   │
-        ┌──────────────────────────┴──────────────────────────┐
-        │                                                     │
-  ┌─────▼─────────────────────────┐             ┌─────────────▼─────────────────┐
-  │         COMMON KERNEL         │             │         DOMAIN LAYER          │
-  │  - Universal Geometry State   │             │  - Cyclic Quad (CQNS N=4)     │
-  │  - Domain Profile Contract    │             │  - Triangle Stand (N=3)       │
-  │  - Topology Guard             │             │  - Planar Quadrilateral (N=4) │
-  │  - Arc / Chord Normalizer     │             │  - Pentagon (N=5)             │
-  │  - GeometryCore Invariants    │             │  - Hexagon / N-gon (Planned)  │
-  └─────────────┬─────────────────┘             └─────────────┬─────────────────┘
-                │                                             │
-        ┌───────┴─────────────────────────────────────────────┘
-        │
-  ┌─────▼───────────────────────────────────────────────────────────────────────┐
-  │                 HEADLESS SEMANTIC COMMAND DISPATCHER                        │
-  │  - SemanticCommand Protocol (Unified interface for UI & AI Agents)          │
-  │  - Deterministic Dispatcher with Topology Validation & Rollback             │
-  │  - Dynamic Auxiliary State & Straightedge/Compass DAG Engine                │
-  └─────────────┬─────────────────────────────────────────────┬─────────────────┘
-                │                                             │
-        ┌───────┴───────────────────┐                         │
-        │                           │                         │
-  ┌─────▼─────────────────────┐ ┌───▼─────────────────────────▼─────────────────┐
-  │    OBSERVATION & MEMORY   │ │                   UI LAYER                    │
-  │  - CheckpointBuffer (3-Slot)│ │  - Canvas Stage & Viewport Normalization    │
-  │  - GeometryStateSnapshot  │ │  - GeometryResearchTable Component            │
-  │  - Research Row Mapper    │ │  - Interactive Measurement Tools              │
-  │  - Snapshot Diff Utility  │ │  - Pure Projection (Zero Math Authority)      │
-  │  - Entity Measurements    │ └───────────────────────────────────────────────┘
-  └───────────────────────────┘
+                           GEOMETRY REASONING STAND
+                                      │
+                         ┌────────────┴────────────┐
+                         │    RESEARCH SESSION     │
+                         │   (Multi-Plane Shell)   │
+                         └────────────┬────────────┘
+                                      │
+               ┌──────────────────────┴──────────────────────┐
+               │                                             │
+      ┌────────▼─────────┐                          ┌────────▼─────────┐
+      │     PLANE 1      │                          │     PLANE 2      │
+      │  (EXPERIMENT)    │                          │   (REFERENCE)    │
+      │  - Active/Mutable│                          │  - BUILDING/FIXED│
+      │  - GeometryState │ ──[ SAME-STAND CLONE ]──►│  - GeometryState │
+      │  - AuxiliaryState│                          │  - AuxiliaryState│
+      │  - Construct. DAG│                          │  - Construct. DAG│
+      │  - Snapshots     │                          │  - Snapshots     │
+      └────────┬─────────┘                          └────────┬─────────┘
+               │                                             │
+               └──────────────────────┬──────────────────────┘
+                                      │
+    ┌─────────────────────────────────┴─────────────────────────────────┐
+    │                                                                   │
+┌───▼───────────────────────────┐                     ┌─────────────────▼───┐
+│     HUMAN INTERACTION PATH    │                     │     AGENT PATH      │
+│  - Presentation Projection    │                     │  - Headless Adapter │
+│  - SVG Canvas / Live Preview  │                     │  - Explicit planeId │
+│  - 12 Canonical Tools         │                     │  - Multi-Plane Obs. │
+│  - Tool Quantity Setting (1|2)│                     │  - State Guarding   │
+└───┬───────────────────────────┘                     └─────────────────┬───┘
+    │                                                                   │
+    └─────────────────────────────────┬─────────────────────────────────┘
+                                      │
+                                      ▼
+             ┌─────────────────────────────────────────────────┐
+             │       HEADLESS SEMANTIC COMMAND DISPATCHER      │
+             │  - SemanticCommand Protocol (Unified DTOs)      │
+             │  - TopologyGuard Validation & Atomic Rollbacks  │
+             │  - Straightedge, Compass & Tangent DAG Engine   │
+             │  - GeometryCore Pure Invariants & Formulas      │
+             └─────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Authority Model & Architectural Roles
+## 2. Multi-Plane Research Architecture (Remix 3)
 
-To eliminate circular dependencies and prevent "epistemic drift," every subsystem has a strictly delineated authority:
+### A. Plane 1 (Experimental Plane)
+- **Role:** Primary interactive workspace for continuous geometric exploration, dynamic mutations, and ad-hoc constructions.
+- **Mutability:** Always mutable. Changes on Plane 1 never implicitly mutate Plane 2.
+- **State Isolation:** Maintains independent instances of `UniversalGeometryState`, `AuxiliaryState`, and its own Construction DAG lineage.
 
-| Component | Authority / Responsibility | Epistemic Constraint | Status in R2 |
+### B. Plane 2 (Reference / Standard Plane)
+- **Role:** Analytical benchmark, comparison baseline, or target pattern plane.
+- **Lifecycle States:**
+  - `BUILDING`: Mutable, accepting independent construction commands and clones.
+  - `FIXED`: Immutable reference benchmark. Any canonical mutation or clone attempt targeting Plane 2 is rejected with `PLANE_FIXED_READ_ONLY`.
+- **Epistemic Invariant:** Plane 1 remains fully mutable even when Plane 2 is `FIXED`.
+
+### C. Same-Stand Construction Clone (`PLANE 1 → PLANE 2`)
+- **Status:** `IMPLEMENTED` / `TESTED` (Internal Stand Engine)
+- **Mechanics:**
+  1. **Memory Isolation:** Deep clone of `UniversalGeometryState` using domain profile factories (`createCyclic` / `createCartesian`), producing completely independent mutable references.
+  2. **Topological ID Remapping:** All auxiliary entities on Plane 1 receive independent Plane 2 IDs (`p2_pt_...`, `p2_seg_...`, `p2_line_...`, `p2_circ_...`, `p2_meas_...`).
+  3. **DAG Parent Remapping:** Parent references (`parentIds`, `p1Id`, `p2Id`, `throughPointId`, `referenceSegmentId`) are topologically remapped through an internal ID translation ledger (`idMap`).
+  4. **Lifecycle Guard:** If Plane 2 is `FIXED`, the clone operation is strictly rejected with `PLANE_FIXED_READ_ONLY`.
+- **Architectural Distinction:**
+  - *Current Implementation:* Same-Stand Clone reproducing constructions within the same stand instance.
+  - *Future / Conceptual:* Universal Construction Pattern (UCP) with cross-stand serialization and inter-stand compatibility validation.
+
+---
+
+## 3. Toolset & Geometric Semantics
+
+### A. 12 Canonical School Tools
+1. **`SELECT`**: Vertex inspection and parametric drag exploration.
+2. **`POINT`**: Free point, point on chord/segment (`on_segment`), or point on circumcircle (`on_circle`).
+3. **`SEGMENT`**: Point-to-point chord or auxiliary segment.
+4. **`RULER`**: Two-point distance measurement.
+5. **`COMPASS`**: Center + radius point or numerical radius circle.
+6. **`LINE_CIRCLE`**: Extended straightedge line or center-radius circle.
+7. **`PARALLEL`**: Parallel line through point relative to reference chord/line.
+8. **`PERPENDICULAR`**: Normal line through point relative to reference chord/line.
+9. **`ANGLE_BISECTOR`**: Angle bisector ray through 3 points (arm 1, vertex, arm 2).
+10. **`DIAGONAL`**: Quadrilateral diagonal ($AC$ or $BD$).
+11. **`TANGENT`**: Tangent line to circumcircle $S^1$ through point $P \in S^1$.
+12. **`ERASER`**: Deletion of auxiliary entity and dependent DAG descendents.
+
+### B. Tangent Tool Specification (`CONSTRUCT_TANGENT`)
+- **Status:** `IMPLEMENTED` / `TESTED`
+- **Geometric Semantics:** For a point $P \in S^1(O, R)$, the tangent line $L(P)$ is defined by:
+  $$\vec{r} = P - O, \quad \vec{u} = \left(-\frac{r_y}{\|\vec{r}\|}, \frac{r_x}{\|\vec{r}\|}\right), \quad L(P) = \{ P + t \cdot \vec{u} \mid t \in \mathbb{R} \}$$
+- **Verification:** Dot product of tangent direction and radius vector is strictly zero ($\vec{u} \cdot \vec{r} = 0$).
+- **DAG Lineage:** `parentIds: ['circle_main', pointId]`.
+- **Interactive UX:** Point-first resolution (`resolveOrCreatePoint`) commits persistent point on $S^1$, commits tangent line in `AuxiliaryState.lines`, and clears temporary previews.
+
+### C. Tangent Quantity Setting (`1 | 2`)
+- **Status:** `IMPLEMENTED` / `TESTED` (UI Path)
+- **Semantics:** Pre-configured batch size for the active tangent construction session:
+  - **Quantity = 1 (Default):** 1 click $\rightarrow$ 1 tangent constructed $\rightarrow$ tool automatically completes and returns to `SELECT`.
+  - **Quantity = 2:** 1st click $\rightarrow$ 1st tangent constructed $\rightarrow$ stays active (`tangentStep = 1`) $\rightarrow$ 2nd click $\rightarrow$ 2nd tangent constructed $\rightarrow$ tool automatically completes.
+  - **Escape Handling:** Pressing ESC after the 1st tangent in Mode 2 retains the 1st tangent and cancels only the pending 2nd step.
+- **Epistemic Note:** Quantity is an operational session parameter, NOT the total tangent count in `GeometryState`.
+
+---
+
+## 4. Human Path vs. Agent Path
+
+To preserve formal epistemics, human UI capabilities are explicitly decoupled from autonomous agent interfaces:
+
+```text
+A. HUMAN INTERACTION PATH:
+   Human User
+       ↓
+   React UI Shell / Toolbar / Canvas Event
+       ↓
+   App UI State (e.g. tangentQuantity, lineCircleMode)
+       ↓
+   resolveOrCreatePoint / Dynamic Snapping
+       ↓
+   dispatchSemanticCommand(command, context)
+       ↓
+   UniversalGeometryState & AuxiliaryEngine DAG
+
+B. AGENT EXECUTION PATH:
+   Autonomous Agent / Machine Runner
+       ↓
+   AgentInterface Adapter (agentInterface.ts)
+       ↓
+   AgentCommand { planeId: 'PLANE_1' | 'PLANE_2', command: SemanticCommand }
+       ↓
+   Plane 2 FIXED & Concurrency Version Guard
+       ↓
+   dispatchSemanticCommand(command, context)
+       ↓
+   PlaneObservation / Multi-Plane AgentObservation DTO
+```
+
+### Capability Audit Matrix
+
+| Feature | Human UI Path | Agent Execution Path | Status / Audit Note |
 | :--- | :--- | :--- | :--- |
-| **`UniversalGeometryState`** | **Single Source of Truth** for canonical geometric primitives (points, circles, angular parameters). | Emits immutable versioned state (`stateVersion`); never performs proofs or theorem validation. | **FROZEN** |
-| **`GeometryCore`** | **Mathematical Computation Authority** for pure arithmetic, line equations, canonical directions, and metrics. | Pure functions; strictly forbidden from issuing epistemic status tags or mutating state. | **FROZEN** |
-| **`TopologyGuard`** | **Structural Integrity Authority** (validating non-degeneracy, non-coincidence, angle ordering). | Validates structural prerequisites; does not assert mathematical truth or theorem validity. | **FROZEN** |
-| **`ArcChordNormalizer`** | **Parametric Indexing Authority** for angular intervals, wrap-around tracking, and arc/chord metrics. | Read-only calculation of arc intervals; preserves input array order without silent sorting. | **FROZEN** |
-| **`AuxiliaryEngine`** | **Operational Construction DAG Authority** managing parent-child relations and dynamic geometry recomputation. | Lineage tracking and metric recalculation; construction existence does NOT establish theorem validity. | **FROZEN** |
-| **`CommandDispatcher`** | **Central Operational Pipeline** executing semantic commands for both UI and Autonomous Agents. | Dispatches commands to state, validates topology, and recomputes DAG; zero theorem generation. | **FROZEN** |
-| **`CheckpointBuffer`** | **Operational Return Memory Authority** managing strictly 3 isolated slots (`1 \| 2 \| 3`). | Pure return point storage; isolated from external snapshots and undo histories. | **FROZEN** |
-| **`GeometryStateSnapshot`** | **Raw Observation DTO** capturing canonical inputs, coordinates, DAG entities, and area metrics. | Pure read-only projection; contains ZERO analysis or speculative hypotheses. | **FROZEN** |
-| **`SnapshotDiff`** | **DTO Comparison Utility** computing mathematical deltas (`after - before`) between snapshots. | Pure subtraction of existing numeric values; zero formula duplication. | **FROZEN** |
-| **`GeometryResearchTable`** | **Tabular Projection Layer** presenting parametric exploration datasets. | Pure read-only view; does not perform geometry calculations table-side. | **FROZEN** |
-| **`AAM Gateway`** | **Natural Language Translation Gateway** converting human intent into structured `SemanticCommand`s. | Translation only; not a geometry engine, verification authority, or proof system. | **PLANNED** |
-| **`User Interface (UI)`** | **Presentation & Interaction Layer** (SVG Canvas, Research Table, Inspection Cards). | Pure consumer of kernel and auxiliary states; strictly forbidden from independent mathematical truth assertions. | **FROZEN** |
+| **Two-Plane Switching** | `IMPLEMENTED` | `IMPLEMENTED` | Tested via `agentInterface.test.ts` & `twoPlaneScenario.test.ts` |
+| **Plane 2 FIXED Guard** | `IMPLEMENTED` | `IMPLEMENTED` | Tested: Rejects agent mutations with `PLANE_FIXED_READ_ONLY` |
+| **`CONSTRUCT_TANGENT`** | `IMPLEMENTED` | `IMPLEMENTED` | Command executes deterministically via `dispatchSemanticCommand` |
+| **Tangent Quantity 1/2** | `IMPLEMENTED` | `NOT YET AGENT-AUDITED` | UI session batching; agent dispatches discrete commands directly |
+| **Same-Stand Clone** | `IMPLEMENTED` | `NOT YET AGENT-AUDITED` | Pure TypeScript function `clonePlane1ToPlane2`; programmatic agent adapter wrapper not yet benchmarked |
+| **Universal Construction Pattern** | `FUTURE` | `FUTURE` | Conceptual serialization for cross-stand transfer |
 
 ---
 
-## 3. Core Constitutional Principles
+## 5. Core Constitutional Principles
 
-### A. The Prime Constitutional Axiom
-> **AGENT MAY BE WRONG. THE STAND MUST NOT.**
-
-The stand produces verified facts (coordinates, equations, lengths, areas, ratios). The agent consumes these facts and interprets them. The stand never accepts unproven agent assertions as factual geometry.
-
-### B. Epistemic Separation Rules
-1. **Mathematical Fact ≠ Software Action ≠ Research Interpretation:**
-   - A *Mathematical Fact* is a deterministic coordinate or metric value computed by `GeometryCore`.
-   - A *Software Action* is a command executed through `CommandDispatcher`.
-   - A *Research Interpretation* is an analytical hypothesis formulated by an external agent.
-2. **Construction ≠ Verification:**
-   - Constructing a straightedge line, compass circle, or diagonal in `AuxiliaryEngine` records operational lineage. It does not prove that a geometric theorem holds.
-3. **Object Existence ≠ Relation Validity:**
-   - An entity (e.g. diagonal segment $AC$) may exist in the DAG, but its metric relationship must be evaluated explicitly.
-4. **Snapshot ≠ Checkpoint:**
-   - A **Snapshot** is a lightweight, read-only observation DTO produced in unlimited quantities for data collection and analysis.
-   - A **Checkpoint** is an operational return point stored in one of strictly three memory slots (`1 | 2 | 3`).
-5. **No Magic Geometry:**
-   - Geometry must arise strictly through declared, explicit operations with recorded provenance and parent IDs.
+1. **The Prime Constitutional Axiom:**
+   > **AGENT MAY BE WRONG. THE STAND MUST NOT.**
+   The stand produces mathematically verified facts (coordinates, equations, lengths, areas, invariants). The agent consumes and reasons about these facts.
+2. **Epistemic Separation:**
+   - *Mathematical Fact* $\neq$ *Software Action* $\neq$ *Research Interpretation*.
+3. **Construction $\neq$ Verification:**
+   - Constructing an auxiliary entity records operational lineage in the DAG; it does not prove a geometric theorem.
+4. **No Magic Geometry:**
+   - All geometric entities must possess explicit provenance and traceable parent identifiers.
+5. **UI Capability $\neq$ Agent Capability:**
+   - Presence of a UI button or visual widget does not constitute proof of autonomous agent access until verified by headless integration tests.
 
 ---
 
-## 4. Headless Semantic Command Pipeline
+## 6. Verification & Build Integrity
 
-All modifications to the geometry stand pass through a single, deterministic pipeline:
-
-$$\text{Human UI} \mathbin{/} \text{Autonomous AI Agent} \xrightarrow{\texttt{SemanticCommand}} \texttt{dispatchSemanticCommand()} \longrightarrow \begin{cases} \texttt{UniversalGeometryState.commitMutation()} \\ \texttt{AuxiliaryEngine.recomputeAuxiliaryGeometry()} \\ \texttt{CheckpointBuffer} \end{cases}$$
-
-### Supported Command Catalog (v0.1)
-
-1. **Selection & Editing:** `SELECT`, `ERASE_ENTITY`.
-2. **Canonical Parameters:** `SET_CANONICAL_VERTEX_ANGLE`, `SHIFT_CANONICAL_VERTEX_ANGLE`.
-3. **Construction DAG:** `CONSTRUCT_POINT`, `CONSTRUCT_SEGMENT`, `CONSTRUCT_DIAGONAL`, `CONSTRUCT_LINE`, `CONSTRUCT_CIRCLE`, `CONSTRUCT_PARALLEL`, `CONSTRUCT_PERPENDICULAR`, `CONSTRUCT_ANGLE_BISECTOR`, `CONSTRUCT_INTERSECTION`, `CONSTRUCT_COMPASS`.
-4. **Measurements:** `MEASURE_DISTANCE`.
-5. **Operational Memory:** `SAVE_CHECKPOINT`, `RESTORE_CHECKPOINT`, `CLEAR_CHECKPOINT`, `GET_CHECKPOINT_INFO`.
-6. **Observation Layer:** `GET_ACTIVE_SNAPSHOT`, `GET_ENTITY_MEASUREMENT`.
-
----
-
-## 5. Checkpoint Buffer Architecture (v0.1)
-
-The **Checkpoint Buffer** provides a 3-slot operational return memory for parametric research:
-
-- **Slots:** Exactly three slots: `1 | 2 | 3`.
-- **Recommended Usage:**
-  - `Slot 1`: **BASELINE** (initial geometry and base constructions).
-  - `Slot 2`: **INTERMEDIATE / CONTROL** (critical extremum or reference state).
-  - `Slot 3`: **BRANCH** (alternative construction line).
-- **Immutability & Isolation:**
-  - Universal geometry state is captured via frozen instances.
-  - Auxiliary state is cloned via `cloneAuxiliaryState(...)` ensuring zero shared mutable references.
-- **Monotonic Restore:**
-  - Restoring a checkpoint does **not** roll back `stateVersion`.
-  - It commits a restore mutation onto the active state ($v_{restore} > v_{live} > v_{saved}$), preserves provenance (`RESTORE_CHECKPOINT_1_FROM_V1`), and dynamically recomputes dependent auxiliary entities.
-
----
-
-## 6. Canonical Autonomous Research Workflow
-
-```text
-[ 1. OPEN / LOAD ] ──────► Initialize canonical geometry state (e.g. Cyclic N=4)
-        │
-        ▼
-[ 2. BASELINE ] ─────────► Construct essential auxiliary lines/diagonals
-        │
-        ▼
-[ 3. CHECKPOINT ] ───────► SAVE_CHECKPOINT(1, "baseline")
-        │
-        ▼
-[ 4. PARAMETER STEP ] ───► SET_CANONICAL_VERTEX_ANGLE(θ_A = 50°)
-        │
-        ▼
-[ 5. RECOMPUTE ] ────────► Automatic dynamic DAG recomputation in AuxiliaryEngine
-        │
-        ▼
-[ 6. OBSERVE ] ──────────► GET_ENTITY_MEASUREMENT("diag_A_C") or GET_ACTIVE_SNAPSHOT
-        │
-        ▼
-[ 7. SNAPSHOT ] ─────────► Collect Snapshot S_i into agent observation dataset
-        │
-        ▼
-[ 8. COMPARE ] ──────────► diffGeometrySnapshots(S_baseline, S_i)
-        │
-        ▼
-[ 9. RESTORE ] ──────────► RESTORE_CHECKPOINT(1) (Return to baseline with monotonic v_next)
-        │
-        ▼
-[ 10. REPEAT / BRANCH ] ─► Explore next parameter or alternative hypothesis branch
-```
-
----
-
-## 7. Autonomous Agent Safety Boundaries
-
-- **The Agent MAY:**
-  - Dispatch semantic commands through `dispatchSemanticCommand`.
-  - Capture snapshots and inspect entity measurements.
-  - Manage checkpoint slots and restore previous baselines.
-  - Calculate deltas and analyze data externally.
-- **The Agent MUST NOT:**
-  - Directly mutate `GeometryState` or `AuxiliaryState` objects.
-  - Weaken `TopologyGuard` constraints or alter mathematical definitions in `GeometryCore`.
-  - Inject fabricated facts into the system without explicit construction lineage.
-  - Treat speculative hypotheses as verified stand truths.
+- **Active Test Suites:** 23 passing test suites in `npm test` (100% PASS).
+- **Static Typecheck:** Zero errors (`tsc -p remix2/tsconfig.json --noEmit`).
+- **Production Build:** Verified (`vite build`).
+- **Dev Server:** Port 3000, Vite SPA.

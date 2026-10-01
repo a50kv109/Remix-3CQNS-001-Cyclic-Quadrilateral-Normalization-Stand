@@ -93,12 +93,12 @@ Foundational architecture, roadmap, decisions, and package documentation in `/do
 * [GitHub Publishing Guide (`docs/GITHUB_PUBLISHING_GUIDE.md`)](./docs/GITHUB_PUBLISHING_GUIDE.md) — Main repository publishing guide, development scripts, test definitions, and agent onboarding.
 * [Architecture Overview (`docs/ARCHITECTURE.md`)](./docs/ARCHITECTURE.md) — Architectural hierarchy, authority models, observation layer, and epistemic boundaries.
 * [Project Roadmap (`docs/ROADMAP.md`)](./docs/ROADMAP.md) — Implementation milestones from R2-00 to R2-16 with current statuses.
-* [Architectural Decisions (`docs/DECISIONS.md`)](./docs/DECISIONS.md) — Architectural Decision Records (ADR-001 through ADR-014).
+* [Architectural Decisions (`docs/DECISIONS.md`)](./docs/DECISIONS.md) — Architectural Decision Records (ADR-001 through ADR-019).
 * [Remix 2 Implementation (`remix2/README.md`)](./remix2/README.md) — Codebase structure and test commands.
 
 ---
 
-## Current Implementation State (v0.1)
+## Current Implementation State (Remix 3 Current State)
 
 | Package / Milestone | Component Name | Factual Status | Files / Tests |
 | :--- | :--- | :--- | :--- |
@@ -117,7 +117,14 @@ Foundational architecture, roadmap, decisions, and package documentation in `/do
 | **Research Table** | **Row Mapper & Read-Only Table** | **FROZEN** | `remix2/src/research/tableMapper.ts`<br>`remix2/src/ui/components/GeometryResearchTable.tsx` |
 | **Checkpoint Buffer** | **3-Slot Operational Return Memory** | **FROZEN** | `remix2/src/research/checkpointBuffer.ts`<br>`remix2/tests/checkpointBufferRegression.test.ts` |
 | **Observation Utils** | **Agent Observation Utilities** | **FROZEN** | `remix2/src/research/snapshotDiff.ts`<br>`remix2/tests/agentObservationUtilities.test.ts` |
-| **AAM Gateway** | **Autonomous Agent NLP Gateway** | **PLANNED** | Integration layer for natural language semantic translation |
+| **R3-01** | **Two-Plane Research Session** | **IMPLEMENTED** | `remix2/src/ui/types/researchSession.ts`<br>`remix2/tests/twoPlaneScenario.test.ts`<br>`remix2/tests/runtimeCrashFix.test.ts` |
+| **R3-01.1** | **Research Plane UI Controls & Status** | **IMPLEMENTED** | `remix2/src/ui/components/ResearchPlaneControls.tsx`<br>`remix2/tests/researchPlaneControls.test.ts` |
+| **R3-01.2** | **Same-Stand Construction Clone** | **IMPLEMENTED / TESTED**<br>*(Agent Access: NOT YET AUDITED)* | `remix2/src/research/planeClone.ts`<br>`remix2/tests/tangentAndPlaneClone.test.ts` |
+| **R3-02** | **Headless Agent Interface Adapter** | **IMPLEMENTED / TESTED** | `remix2/src/research/agentInterface.ts`<br>`remix2/tests/agentInterface.test.ts` |
+| **R3-03** | **Tangent Tool & Quantity UX (1\|2)** | **IMPLEMENTED / TESTED**<br>*(Agent Access: NOT YET AUDITED)* | `remix2/src/ui/canvas/SchoolToolbar.tsx`<br>`remix2/src/ui/canvas/GeometryCanvas.tsx`<br>`remix2/tests/tangentAndPlaneClone.test.ts` |
+| **R3-04.1** | **Point-First Construction Protocol** | **IMPLEMENTED / TESTED** | `remix2/src/ui/canvas/pointResolution.ts`<br>`remix2/tests/segmentCommitRegression.test.ts` |
+| **R3-04.2** | **Structural Passport & Invariants** | **IMPLEMENTED / TESTED** | `remix2/src/research/structuralPassport.ts`<br>`remix2/tests/structuralPassport.test.ts` |
+| **R3-05** | **Universal Construction Pattern (UCP)** | **FUTURE / CONCEPTUAL** | Cross-stand portable serialization & inter-stand compatibility validation |
 
 ---
 

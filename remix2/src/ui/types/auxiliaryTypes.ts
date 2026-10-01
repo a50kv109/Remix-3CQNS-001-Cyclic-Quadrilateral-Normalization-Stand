@@ -37,7 +37,7 @@ export interface AuxiliarySegment {
   readonly parentIds?: readonly string[];
 }
 
-export type AuxiliaryLineType = 'two_points' | 'parallel' | 'perpendicular' | 'bisector';
+export type AuxiliaryLineType = 'two_points' | 'parallel' | 'perpendicular' | 'bisector' | 'tangent';
 
 export interface AuxiliaryLine {
   readonly id: string;

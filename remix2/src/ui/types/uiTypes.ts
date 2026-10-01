@@ -24,6 +24,7 @@ export type CanonicalToolId =
   | 'PERPENDICULAR'
   | 'ANGLE_BISECTOR'
   | 'DIAGONAL'
+  | 'TANGENT'
   | 'INTERSECTION'
   | 'ERASER';
 

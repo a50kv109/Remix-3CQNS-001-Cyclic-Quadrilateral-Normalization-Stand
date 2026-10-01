@@ -23,6 +23,7 @@ export type SemanticCommandType =
   | 'CONSTRUCT_PERPENDICULAR'
   | 'CONSTRUCT_ANGLE_BISECTOR'
   | 'CONSTRUCT_DIAGONAL'
+  | 'CONSTRUCT_TANGENT'
   | 'CONSTRUCT_INTERSECTION'
   | 'ERASE_ENTITY'
   | 'SET_CANONICAL_VERTEX_ANGLE'
@@ -99,6 +100,12 @@ export interface ConstructAngleBisectorCommand {
   readonly arm2PointId: string;
 }
 
+export interface ConstructTangentCommand {
+  readonly type: 'CONSTRUCT_TANGENT';
+  readonly circleId?: string;
+  readonly pointId: string;
+}
+
 export interface ConstructDiagonalCommand {
   readonly type: 'CONSTRUCT_DIAGONAL';
   readonly vertex1Id: string;
@@ -172,6 +179,7 @@ export type SemanticCommand =
   | ConstructPerpendicularCommand
   | ConstructAngleBisectorCommand
   | ConstructDiagonalCommand
+  | ConstructTangentCommand
   | ConstructIntersectionCommand
   | EraseEntityCommand
   | SetCanonicalVertexAngleCommand
@@ -197,6 +205,7 @@ export const TOOL_TO_COMMAND_MAP: Record<CanonicalToolId, SemanticCommandType | 
   PERPENDICULAR: 'CONSTRUCT_PERPENDICULAR',
   ANGLE_BISECTOR: 'CONSTRUCT_ANGLE_BISECTOR',
   DIAGONAL: 'CONSTRUCT_DIAGONAL',
+  TANGENT: 'CONSTRUCT_TANGENT',
   INTERSECTION: 'CONSTRUCT_INTERSECTION',
   ERASER: 'ERASE_ENTITY'
 };
