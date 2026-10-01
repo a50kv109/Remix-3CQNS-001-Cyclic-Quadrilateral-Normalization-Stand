@@ -1,0 +1,41 @@
+{
+  "name": "react-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config remix2/vite.config.ts --port=3000 --host=0.0.0.0",
+    "build": "vite build --config remix2/vite.config.ts",
+    "preview": "vite preview --config remix2/vite.config.ts",
+    "clean": "rm -rf dist server.js",
+    "lint": "tsc -p remix2/tsconfig.json --noEmit",
+    "test": "npm run test:r2",
+    "dev:r2": "vite --config remix2/vite.config.ts --port=3000 --host=0.0.0.0",
+    "build:r2": "vite build --config remix2/vite.config.ts",
+    "lint:r2": "tsc -p remix2/tsconfig.json --noEmit",
+    "test:r2": "tsx remix2/tests/foundation.test.ts && tsx remix2/tests/geometryState.test.ts && tsx remix2/tests/domainProfiles.test.ts && tsx remix2/tests/topologyGuard.test.ts && tsx remix2/tests/arcChordNormalizer.test.ts && tsx remix2/tests/uiShell.test.ts && tsx remix2/tests/toolsAndAuxiliary.test.ts && tsx remix2/tests/commandDispatcher.test.ts && tsx remix2/tests/normalizationStep1.test.ts && tsx remix2/tests/machineAngleControlRegression.test.ts && tsx remix2/tests/geometryStateSnapshotRegression.test.ts && tsx remix2/tests/areaMeasurementRegression.test.ts && tsx remix2/tests/geometryResearchRowMapperRegression.test.ts && tsx remix2/tests/geometryResearchTableRegression.test.ts && tsx remix2/tests/checkpointBufferRegression.test.ts && tsx remix2/tests/agentObservationUtilities.test.ts && tsx remix2/tests/researchPlaneControls.test.ts && tsx remix2/tests/agentInterface.test.ts && tsx remix2/tests/structuralPassport.test.ts && tsx remix2/tests/researchGuide.test.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.4.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1",
+    "lucide-react": "^0.546.0",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^8.3.0",
+    "express": "^4.21.2",
+    "dotenv": "^17.2.3",
+    "motion": "^12.23.24"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.21.0",
+    "typescript": "^7.0.2",
+    "@types/express": "^4.17.21"
+  }
+}
