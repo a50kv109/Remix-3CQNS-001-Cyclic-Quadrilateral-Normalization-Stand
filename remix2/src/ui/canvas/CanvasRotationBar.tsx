@@ -5,9 +5,12 @@
 
 import React from 'react';
 import { RotateCw } from 'lucide-react';
+import { Language } from '../types/uiTypes';
+import { getTranslation } from '../i18n/translations';
 
 interface CanvasRotationBarProps {
   readonly rotationDeg: number;
+  readonly language?: Language;
   readonly onRotationChange: (deg: number) => void;
   readonly onStepRotation: (stepDeg: number) => void;
   readonly onResetRotation: () => void;
@@ -15,16 +18,19 @@ interface CanvasRotationBarProps {
 
 export const CanvasRotationBar: React.FC<CanvasRotationBarProps> = ({
   rotationDeg,
+  language = 'RU',
   onRotationChange,
   onStepRotation,
   onResetRotation
 }) => {
+  const t = getTranslation(language);
+
   return (
     <div className="h-10 bg-slate-900 border-t border-slate-800 px-4 flex items-center justify-between gap-4 text-xs select-none z-10">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 text-purple-400 font-semibold text-[11px] tracking-wide">
           <RotateCw className="w-3.5 h-3.5" />
-          <span>ВРАЩЕНИЕ::</span>
+          <span>{t.rotationLabel}</span>
         </div>
 
         {/* Quick Step Buttons */}
@@ -75,7 +81,7 @@ export const CanvasRotationBar: React.FC<CanvasRotationBarProps> = ({
         <span className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono text-[10px]">
           ROTATION
         </span>
-        <span>Поверните диск для удобного доступа к вершинам</span>
+        <span>{t.rotationHint}</span>
       </div>
     </div>
   );

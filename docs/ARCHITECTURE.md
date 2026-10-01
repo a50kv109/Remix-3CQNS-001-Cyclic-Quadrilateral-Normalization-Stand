@@ -6,7 +6,7 @@
 
 ## 1. General Architectural Hierarchy
 
-Geometry Reasoning Stand is organized into strictly decoupled horizontal layers with two-plane operational research support:
+Geometry Reasoning Stand is organized into strictly decoupled horizontal layers with two-plane operational research support and multi-language normalization:
 
 ```text
                            GEOMETRY REASONING STAND
@@ -37,7 +37,7 @@ Geometry Reasoning Stand is organized into strictly decoupled horizontal layers 
 │  - Presentation Projection    │                     │  - Headless Adapter │
 │  - SVG Canvas / Live Preview  │                     │  - Explicit planeId │
 │  - 12 Canonical Tools         │                     │  - Multi-Plane Obs. │
-│  - Tool Quantity Setting (1|2)│                     │  - State Guarding   │
+│  - Language Selector (RU/UA/EN│                     │  - State Guarding   │
 └───┬───────────────────────────┘                     └─────────────────┬───┘
     │                                                                   │
     └─────────────────────────────────┬─────────────────────────────────┘
@@ -75,15 +75,12 @@ Geometry Reasoning Stand is organized into strictly decoupled horizontal layers 
   2. **Topological ID Remapping:** All auxiliary entities on Plane 1 receive independent Plane 2 IDs (`p2_pt_...`, `p2_seg_...`, `p2_line_...`, `p2_circ_...`, `p2_meas_...`).
   3. **DAG Parent Remapping:** Parent references (`parentIds`, `p1Id`, `p2Id`, `throughPointId`, `referenceSegmentId`) are topologically remapped through an internal ID translation ledger (`idMap`).
   4. **Lifecycle Guard:** If Plane 2 is `FIXED`, the clone operation is strictly rejected with `PLANE_FIXED_READ_ONLY`.
-- **Architectural Distinction:**
-  - *Current Implementation:* Same-Stand Clone reproducing constructions within the same stand instance.
-  - *Future / Conceptual:* Universal Construction Pattern (UCP) with cross-stand serialization and inter-stand compatibility validation.
 
 ---
 
 ## 3. Toolset & Geometric Semantics
 
-### A. 12 Canonical School Tools
+### A. Canonical School Tools
 1. **`SELECT`**: Vertex inspection and parametric drag exploration.
 2. **`POINT`**: Free point, point on chord/segment (`on_segment`), or point on circumcircle (`on_circle`).
 3. **`SEGMENT`**: Point-to-point chord or auxiliary segment.
@@ -103,29 +100,35 @@ Geometry Reasoning Stand is organized into strictly decoupled horizontal layers 
   $$\vec{r} = P - O, \quad \vec{u} = \left(-\frac{r_y}{\|\vec{r}\|}, \frac{r_x}{\|\vec{r}\|}\right), \quad L(P) = \{ P + t \cdot \vec{u} \mid t \in \mathbb{R} \}$$
 - **Verification:** Dot product of tangent direction and radius vector is strictly zero ($\vec{u} \cdot \vec{r} = 0$).
 - **DAG Lineage:** `parentIds: ['circle_main', pointId]`.
-- **Interactive UX:** Point-first resolution (`resolveOrCreatePoint`) commits persistent point on $S^1$, commits tangent line in `AuxiliaryState.lines`, and clears temporary previews.
-
-### C. Tangent Quantity Setting (`1 | 2`)
-- **Status:** `IMPLEMENTED` / `TESTED` (UI Path)
-- **Semantics:** Pre-configured batch size for the active tangent construction session:
-  - **Quantity = 1 (Default):** 1 click $\rightarrow$ 1 tangent constructed $\rightarrow$ tool automatically completes and returns to `SELECT`.
-  - **Quantity = 2:** 1st click $\rightarrow$ 1st tangent constructed $\rightarrow$ stays active (`tangentStep = 1`) $\rightarrow$ 2nd click $\rightarrow$ 2nd tangent constructed $\rightarrow$ tool automatically completes.
-  - **Escape Handling:** Pressing ESC after the 1st tangent in Mode 2 retains the 1st tangent and cancels only the pending 2nd step.
-- **Epistemic Note:** Quantity is an operational session parameter, NOT the total tangent count in `GeometryState`.
 
 ---
 
-## 4. Human Path vs. Agent Path
+## 4. Language Kernel & Semantic Gateway (RU / UA / EN)
 
-To preserve formal epistemics, human UI capabilities are explicitly decoupled from autonomous agent interfaces:
+### A. Semantic Gateway Principle
+The language layer operates as a **Semantic Gateway** — a normalization layer providing language-invariant mapping for UI presentations, educational protocols, and research observations:
+- **Languages Supported:** Russian (`RU`), Ukrainian (`UA`), English (`EN`).
+- **Persistence:** User language choice is loaded via `getSavedLanguage()` and saved via `saveLanguagePreference(lang)` into browser `localStorage` under key `cqns_language_preference` (defaulting to `'RU'`).
+
+### B. Normalized Subsystems
+- **Summary Table Panel:** Invariant metrics, opposite angle sums, Ptolemy ratios, area breakdown.
+- **Structural Passport Panel:** Quadrilateral classification, diagonal properties, center location status.
+- **AAM Gateway Panel:** Normalized representation export, state hash, version status.
+- **Education Panel & Research Checklist:** Complete 12-step research protocol (Question, Object, Variable, Construction, Measurement, Relation, Parameter Sweep, Pattern, Hypothesis, Counterexample, Next Experiment, Epistemic Status) and DRA Heuristic Rails.
+- **Numeric Angles Modal:** Dialog headers, vertex input labels, validation error messages.
+- **Research Plane Controls:** Controls, clone buttons, tooltips, plane status badges.
+
+---
+
+## 5. Human Path vs. Agent Path
 
 ```text
 A. HUMAN INTERACTION PATH:
    Human User
        ↓
-   React UI Shell / Toolbar / Canvas Event
+   Header Bar Language Selector (RU/UA/EN) & Toolbar
        ↓
-   App UI State (e.g. tangentQuantity, lineCircleMode)
+   App UI State (language, activeTool, standMode)
        ↓
    resolveOrCreatePoint / Dynamic Snapping
        ↓
@@ -147,20 +150,9 @@ B. AGENT EXECUTION PATH:
    PlaneObservation / Multi-Plane AgentObservation DTO
 ```
 
-### Capability Audit Matrix
-
-| Feature | Human UI Path | Agent Execution Path | Status / Audit Note |
-| :--- | :--- | :--- | :--- |
-| **Two-Plane Switching** | `IMPLEMENTED` | `IMPLEMENTED` | Tested via `agentInterface.test.ts` & `twoPlaneScenario.test.ts` |
-| **Plane 2 FIXED Guard** | `IMPLEMENTED` | `IMPLEMENTED` | Tested: Rejects agent mutations with `PLANE_FIXED_READ_ONLY` |
-| **`CONSTRUCT_TANGENT`** | `IMPLEMENTED` | `IMPLEMENTED` | Command executes deterministically via `dispatchSemanticCommand` |
-| **Tangent Quantity 1/2** | `IMPLEMENTED` | `NOT YET AGENT-AUDITED` | UI session batching; agent dispatches discrete commands directly |
-| **Same-Stand Clone** | `IMPLEMENTED` | `NOT YET AGENT-AUDITED` | Pure TypeScript function `clonePlane1ToPlane2`; programmatic agent adapter wrapper not yet benchmarked |
-| **Universal Construction Pattern** | `FUTURE` | `FUTURE` | Conceptual serialization for cross-stand transfer |
-
 ---
 
-## 5. Core Constitutional Principles
+## 6. Core Constitutional Principles
 
 1. **The Prime Constitutional Axiom:**
    > **AGENT MAY BE WRONG. THE STAND MUST NOT.**
@@ -176,9 +168,9 @@ B. AGENT EXECUTION PATH:
 
 ---
 
-## 6. Verification & Build Integrity
+## 7. Verification & Build Integrity
 
 - **Active Test Suites:** 23 passing test suites in `npm test` (100% PASS).
 - **Static Typecheck:** Zero errors (`tsc -p remix2/tsconfig.json --noEmit`).
 - **Production Build:** Verified (`vite build`).
-- **Dev Server:** Port 3000, Vite SPA.
+- **Browser/UI Verification Status:** `NOT BROWSER VERIFIED` (Automated build and tests pass; manual browser UI interaction is pending user verification).

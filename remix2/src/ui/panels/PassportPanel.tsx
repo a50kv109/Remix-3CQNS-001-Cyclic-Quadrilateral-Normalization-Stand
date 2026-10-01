@@ -6,12 +6,16 @@
 import React from 'react';
 import { ShieldCheck, CheckCircle2, AlertTriangle, Layers } from 'lucide-react';
 import { GeometryPresentationData } from '../projection/presentationModel';
+import { Language } from '../types/uiTypes';
+import { getTranslation } from '../i18n/translations';
 
 interface PassportPanelProps {
   readonly presentation: GeometryPresentationData;
+  readonly language?: Language;
 }
 
-export const PassportPanel: React.FC<PassportPanelProps> = ({ presentation }) => {
+export const PassportPanel: React.FC<PassportPanelProps> = ({ presentation, language = 'RU' }) => {
+  const t = getTranslation(language);
   const { topologyReport, stateVersion, provenance, center, radius, vertices } = presentation;
   const isValid = topologyReport.status === 'VALID';
 
@@ -25,10 +29,10 @@ export const PassportPanel: React.FC<PassportPanelProps> = ({ presentation }) =>
           </div>
           <div>
             <h2 className="font-semibold text-slate-100 text-xs">
-              Паспорт конфигурации (Geometry Passport)
+              {t.passportTitle}
             </h2>
             <p className="text-[11px] text-slate-400">
-              Архитектурный срез состояния Remix 2 State Core
+              {t.passportSubTitle}
             </p>
           </div>
         </div>
@@ -47,7 +51,7 @@ export const PassportPanel: React.FC<PassportPanelProps> = ({ presentation }) =>
             {isValid ? (
               <>
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                VALID
+                {t.validBadge}
               </>
             ) : (
               <>
@@ -62,22 +66,22 @@ export const PassportPanel: React.FC<PassportPanelProps> = ({ presentation }) =>
       {/* 2. Metadata Cards */}
       <div className="grid grid-cols-2 gap-3 text-[11px] font-mono">
         <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 flex flex-col gap-1">
-          <span className="text-[10px] text-slate-400 font-sans uppercase">Фигура & Вершины</span>
-          <span className="text-slate-100 font-semibold">Вписанный четырёхугольник (N = 4)</span>
-          <span className="text-purple-400">Профиль: {topologyReport.profile}</span>
+          <span className="text-[10px] text-slate-400 font-sans uppercase">{t.figureAndVertices}</span>
+          <span className="text-slate-100 font-semibold">{t.inscribedQuadName}</span>
+          <span className="text-purple-400">{t.profileLabel} {topologyReport.profile}</span>
         </div>
 
         <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 flex flex-col gap-1">
-          <span className="text-[10px] text-slate-400 font-sans uppercase">Опорная окружность S¹</span>
+          <span className="text-[10px] text-slate-400 font-sans uppercase">{t.baseCircleLabel}</span>
           <span className="text-slate-100 font-semibold">R = {radius.toFixed(2)} мм</span>
-          <span className="text-slate-400">Центр: O({center.x.toFixed(1)}, {center.y.toFixed(1)})</span>
+          <span className="text-slate-400">{t.inspectorCenter} O({center.x.toFixed(1)}, {center.y.toFixed(1)})</span>
         </div>
 
         <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 flex flex-col gap-1 col-span-2">
-          <span className="text-[10px] text-slate-400 font-sans uppercase">Происхождение (Provenance)</span>
+          <span className="text-[10px] text-slate-400 font-sans uppercase">{t.provenanceLabel}</span>
           <span className="text-slate-200">{provenance}</span>
           <span className="text-slate-500 text-[10px] font-sans">
-            Неизменяемое состояние зафиксировано через глубокий freeze (Object.freeze)
+            {t.immutableFreezeNote}
           </span>
         </div>
       </div>
@@ -87,17 +91,17 @@ export const PassportPanel: React.FC<PassportPanelProps> = ({ presentation }) =>
         <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 font-semibold text-slate-300 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-purple-400" />
-            <span>Канонические углы и производные декартовы координаты</span>
+            <span>{t.canonicalAnglesTableTitle}</span>
           </div>
           <span className="text-[10px] text-slate-500 font-mono">P_i = O + R·(cos α_i, sin α_i)</span>
         </div>
         <table className="w-full text-left border-collapse text-[11px] font-mono">
           <thead>
             <tr className="bg-slate-900/60 text-slate-400 text-[10px] border-b border-slate-800">
-              <th className="py-1.5 px-3">ВЕРШИНА</th>
-              <th className="py-1.5 px-3">УГОЛ α (ГРАДУСЫ)</th>
-              <th className="py-1.5 px-3">УГОЛ α (РАДИАНЫ)</th>
-              <th className="py-1.5 px-3">ДЕКАРТОВЫ (X, Y)</th>
+              <th className="py-1.5 px-3">{t.thVertex}</th>
+              <th className="py-1.5 px-3">{t.thAngleDeg}</th>
+              <th className="py-1.5 px-3">{t.thAngleRad}</th>
+              <th className="py-1.5 px-3">{t.thCartesianXY}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">

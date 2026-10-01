@@ -108,8 +108,9 @@ export interface ConstructTangentCommand {
 
 export interface ConstructDiagonalCommand {
   readonly type: 'CONSTRUCT_DIAGONAL';
-  readonly vertex1Id: string;
-  readonly vertex2Id: string;
+  readonly sourceVertexId?: string;
+  readonly vertex1Id?: string;
+  readonly vertex2Id?: string;
 }
 
 export interface ConstructIntersectionCommand {

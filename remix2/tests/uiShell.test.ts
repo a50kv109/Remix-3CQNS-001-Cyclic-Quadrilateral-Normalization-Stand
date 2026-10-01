@@ -32,6 +32,8 @@ const initialUiState: UIState = {
     viewRotationDeg: 0
   },
   hoveredVertexId: null,
+  toolbarPosition: 'LEFT',
+  intersectionMode: false,
   isNumericModalOpen: false
 };
 

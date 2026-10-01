@@ -6,9 +6,12 @@
 import React from 'react';
 import { ResearchSession, PlaneId } from '../types/researchSession';
 import { Layers, Lock, Unlock, CheckCircle2, Copy } from 'lucide-react';
+import { Language } from '../types/uiTypes';
+import { getTranslation } from '../i18n/translations';
 
 interface ResearchPlaneControlsProps {
   readonly session: ResearchSession;
+  readonly language?: Language;
   readonly onTogglePlane: (plane: PlaneId) => void;
   readonly onFixPlane2: () => void;
   readonly onClonePlane1ToPlane2?: () => void;
@@ -16,10 +19,12 @@ interface ResearchPlaneControlsProps {
 
 export const ResearchPlaneControls: React.FC<ResearchPlaneControlsProps> = ({
   session,
+  language = 'RU',
   onTogglePlane,
   onFixPlane2,
   onClonePlane1ToPlane2
 }) => {
+  const t = getTranslation(language);
   const isP1 = session.activePlane === 'PLANE_1';
   const isP2 = session.activePlane === 'PLANE_2';
   const isFixed = session.plane2Lifecycle === 'FIXED';
@@ -72,10 +77,10 @@ export const ResearchPlaneControls: React.FC<ResearchPlaneControlsProps> = ({
                 ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                 : 'bg-purple-700 hover:bg-purple-600 active:bg-purple-800 text-white shadow-sm border border-purple-500/50'
             }`}
-            title={isFixed ? 'PLANE 2 IS FIXED — CLONE REJECTED' : 'Клонировать геометрическую конструкцию Plane 1 на Plane 2'}
+            title={isFixed ? t.plane2FixedTooltip : t.cloneTooltip}
           >
             <Copy className="w-3.5 h-3.5" />
-            <span>CLONE → PLANE 2</span>
+            <span>{t.cloneToPlane2}</span>
           </button>
         )}
 
@@ -84,12 +89,12 @@ export const ResearchPlaneControls: React.FC<ResearchPlaneControlsProps> = ({
           {isFixed ? (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800/80 font-mono text-[11px] font-semibold">
               <Lock className="w-3 h-3 text-emerald-400" />
-              PLANE 2: FIXED
+              {t.plane2FixedStatus}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800/80 font-mono text-[11px] font-semibold">
               <Unlock className="w-3 h-3 text-amber-400 animate-pulse" />
-              PLANE 2: BUILDING
+              {t.plane2BuildingStatus}
             </span>
           )}
         </div>
@@ -99,10 +104,10 @@ export const ResearchPlaneControls: React.FC<ResearchPlaneControlsProps> = ({
             type="button"
             onClick={onFixPlane2}
             className="py-1.5 px-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-slate-950 font-bold rounded-md shadow transition-all flex items-center gap-1 text-xs touch-manipulation cursor-pointer"
-            title="Зафиксировать геометрический эталон Plane 2"
+            title={t.fixPlane2}
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-slate-950" />
-            <span>FIX PLANE 2</span>
+            <span>{t.fixPlane2}</span>
           </button>
         )}
       </div>

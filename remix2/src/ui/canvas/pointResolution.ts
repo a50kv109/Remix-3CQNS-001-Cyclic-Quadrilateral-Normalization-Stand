@@ -150,6 +150,41 @@ export function resolveOrCreatePoint(
         message: ptRes.message || 'Failed to create point on circle'
       };
     }
+
+    // Case D: Snap to Intersection Candidate (constructs a first-class intersection point)
+    if (snap.entityType === 'intersection_candidate' && snap.parentIds) {
+      const ptRes = executeCommand(
+        {
+          type: 'CONSTRUCT_INTERSECTION',
+          entity1Id: snap.parentIds[0],
+          entity2Id: snap.parentIds[1]
+        },
+        currentAuxiliaryState
+      );
+
+      if (ptRes.success && ptRes.createdEntityIds.length > 0) {
+        const createdId = ptRes.createdEntityIds[0];
+        const createdPt = ptRes.updatedAuxiliaryState.points.find((p) => p.id === createdId);
+        return {
+          success: true,
+          pointId: createdId,
+          pointCoord: createdPt ? { x: createdPt.x, y: createdPt.y } : { x: snap.x, y: snap.y },
+          isDynamic: true,
+          pointType: 'intersection',
+          parentId: snap.parentIds[0],
+          updatedAuxiliaryState: ptRes.updatedAuxiliaryState
+        };
+      }
+      return {
+        success: false,
+        pointId: null,
+        pointCoord: { x: snap.x, y: snap.y },
+        isDynamic: false,
+        pointType: 'intersection',
+        updatedAuxiliaryState: currentAuxiliaryState,
+        message: ptRes.message || 'Failed to materialize intersection point'
+      };
+    }
   }
 
   // Case D: Free canvas (no snap) -> construct a free point

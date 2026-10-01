@@ -1,36 +1,35 @@
-# Geometry Reasoning Stand 2 (Remix 2)
+# CQNS-001 Cyclic Quadrilateral Normalization Stand
 
-## Status
+[![Remix 2 Core](https://img.shields.io/badge/Architecture-Remix%202%20Kernel-purple.svg)](./remix2)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](./tsconfig.json)
+[![Tests](https://img.shields.io/badge/Regression%20Suites-23%20Passing-emerald.svg)](./remix2/tests)
 
-✨ **ACTIVE DEVELOPMENT / RESEARCH GEOMETRY STAND**
+## Overview
 
-Geometry Reasoning Stand 2 (Remix 2) is an extensible, universal geometry reasoning, parametric exploration, and dynamic construction environment.
+**CQNS-001 Cyclic Quadrilateral Normalization Stand** (Remix 2) is an interactive and automated geometric reasoning, parametric exploration, invariant analysis, and dynamic construction environment.
 
-The system enforces strict architectural decoupling between:
-- Geometric state representation (`UniversalGeometryState`);
-- Structural topology and validation (`TopologyGuard`);
-- Parametric arc and chord normalization (`ArcChordNormalizer`);
-- Operational construction DAG and dynamic auxiliary entity recalculation (`AuxiliaryEngine`);
-- Headless semantic command dispatching (`CommandDispatcher`);
-- State snapshot projections (`GeometryStateSnapshot`);
-- Read-only tabular research projection (`GeometryResearchTable`);
-- Operational return memory (`CheckpointBuffer v0.1`);
-- Fact observation utilities (`GET_ACTIVE_SNAPSHOT`, `GET_ENTITY_MEASUREMENT`, `diffGeometrySnapshots`);
-- Autonomous Agent Module (AAM) translation gateway (planned);
-- Presentation and interactive UI projection (`UI Shell`).
+The system is designed for both human researchers and autonomous AI agents working with cyclic quadrilateral ($N=4$) geometry in a circumcircle $S^1$.
 
 ---
 
-## Initial & Active Target Domain
+## Forensic Verification & Build Status
 
-- **Domain Target:** CQNS — Canonical Cyclic Quadrilateral Normalization Stand
-- **Configuration:** $N = 4$ concyclic vertices on a reference circumcircle $S^1$
-- **Future Targets (Planned):**
-  - Triangle ($N = 3$)
-  - General Quadrilateral (Cartesian, $N = 4$)
-  - Regular & Inscribed Pentagon ($N = 5$)
-  - Hexagon ($N = 6$)
-  - Arbitrary Cyclic & Planar $N$-gon
+* **TypeScript Typecheck (`npm run lint`):** `PASSED` (Zero errors)
+* **Automated Test Suites (`npm run test`):** `PASSED` (23 regression test suites passing)
+* **Production Build (`npm run build`):** `PASSED`
+* **UI / Browser Interactive Verification:** `NOT BROWSER VERIFIED` (Requires manual browser UI testing)
+
+---
+
+## Purpose
+
+The stand provides a deterministic environment to:
+1. Construct and manipulate cyclic quadrilaterals with concyclic vertices $A, B, C, D$ on a reference circumcircle $S^1$ centered at $O(0,0)$ with radius $R$.
+2. Execute straightedge & compass auxiliary constructions (segments, lines, circles, parallel/perpendicular lines, angle bisectors, tangents, diagonals, and line/segment intersections).
+3. Track structural topology and invariants (opposite angle sums $\angle A + \angle C = 180^\circ$, Ptolemy's theorem $AC \cdot BD = AB \cdot CD + BC \cdot DA$, area metrics $S_{circle}, S_{quad}, S_{gap}$).
+4. Provide a dual-plane research workspace (**Plane 1 / Plane 2**) for comparative geometric experiments.
+5. Offer headless semantic execution (`CommandDispatcher`) and pure read-only observation DTOs (`GeometryStateSnapshot`) for AI agents.
+6. Provide full multi-language UI normalization (**RU / UA / EN**) backed by the **AAM Language Gateway** with persistent user preference.
 
 ---
 
@@ -38,29 +37,24 @@ The system enforces strict architectural decoupling between:
 
 > **AGENT MAY BE WRONG. THE STAND MUST NOT.**
 
-The architecture enforces strict separation between:
-1. **Mathematical Computation & Invariants:** Pure coordinate arithmetic, euclidean metric calculations, and invariant geometry (`GeometryCore`).
-2. **Operational Construction:** Lineage tracking and relational parenting in the Construction DAG.
-3. **Headless Semantic Dispatcher:** Central deterministic execution pipe for both human UI and autonomous agents (`CommandDispatcher`).
-4. **Observation Layer:** Pure read-only state projections (`GeometryStateSnapshot`, `diffGeometrySnapshots`, `GET_ENTITY_MEASUREMENT`).
-5. **Operational Memory:** 3-slot return points (`CheckpointBuffer v0.1`).
-6. **Agent Analysis:** External hypothesis generation and exploration (never synthesized as fabricated stand facts).
-7. **User Interface:** Pure projection of kernel and auxiliary states without independent mathematical authority.
+The stand enforces a strict architectural boundary:
+* **Mathematical Truth & Invariants (`GeometryCore` / `UniversalGeometryState`):** Coordinates, metrics, and invariants are computed purely and immutably.
+* **Construction Lineage (Auxiliary DAG):** Every constructed point, segment, line, circle, and intersection maintains strict provenance and parenting in an acyclic graph.
+* **Observation Layer:** Pure read-only projections (`GeometryStateSnapshot`, `GeometryResearchTable`) expose observations without modifying state.
+* **Agent Epistemic Boundary:** Hypotheses and agent interpretations are strictly separated from tool-verified mathematical facts via the **Deterministic Reasoning Anchor (DRA)**.
 
 ---
 
-## Active Architecture: Remix 2
-
-The current working codebase is located in `/remix2`.
+## Architecture Overview
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────┐
-│                               REMIX 2                                  │
-│                   Universal Geometry Architecture                      │
+│                        CQNS-001 Architecture                           │
 │                                                                        │
-│   [Human UI]           [Autonomous AI Agent]          [AAM Gateway]   │
-│        │                         │                          │          │
-│        └─────────────────────────┼──────────────────────────┘          │
+│   [Human UI]           [Autonomous AI Agent]     [AAM Language Kernel] │
+│   (RU/UA/EN)                     │                (Semantic Gateway)   │
+│        │                         │                        │            │
+│        └─────────────────────────┼────────────────────────┘            │
 │                                  ▼                                     │
 │                     [SemanticCommand Protocol]                         │
 │                                  │                                     │
@@ -71,66 +65,117 @@ The current working codebase is located in `/remix2`.
 │                 ▼                                 ▼                    │
 │     [UniversalGeometryState]          [AuxiliaryState / DAG]           │
 │     - Immutable Kernel                - Straightedge & Compass         │
-│     - Versioned & Frozen              - Dynamic Vertex Tracking        │
+│     - Versioned & Deep-Frozen         - Dynamic Vertex Tracking        │
 │     - TopologyGuard                   - Automatic Recomputation        │
 │                 │                                 │                    │
 │                 └────────────────┬────────────────┘                    │
 │                                  ▼                                     │
-│               [Observation & Operational Memory Layer]                 │
+│               [Observation & Research Session Layer]                   │
+│               - Two-Plane Workspace (Plane 1 / Plane 2)                │
 │               - 3-Slot Checkpoint Buffer (Return Points)               │
-│               - GeometryStateSnapshot (Raw Observation DTO)            │
-│               - GeometryResearchTable (Tabular Projection)             │
-│               - Snapshot Diff Utility (DTO Comparison)                 │
+│               - GeometryStateSnapshot & Research Table                 │
+│               - Agent Research Guide & DRA Heuristics                  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Documentation Index
+## Geometry Domain
 
-Foundational architecture, roadmap, decisions, and package documentation in `/docs`:
-
-* [GitHub Publishing Guide (`docs/GITHUB_PUBLISHING_GUIDE.md`)](./docs/GITHUB_PUBLISHING_GUIDE.md) — Main repository publishing guide, development scripts, test definitions, and agent onboarding.
-* [Architecture Overview (`docs/ARCHITECTURE.md`)](./docs/ARCHITECTURE.md) — Architectural hierarchy, authority models, observation layer, and epistemic boundaries.
-* [Project Roadmap (`docs/ROADMAP.md`)](./docs/ROADMAP.md) — Implementation milestones from R2-00 to R2-16 with current statuses.
-* [Architectural Decisions (`docs/DECISIONS.md`)](./docs/DECISIONS.md) — Architectural Decision Records (ADR-001 through ADR-019).
-* [Remix 2 Implementation (`remix2/README.md`)](./remix2/README.md) — Codebase structure and test commands.
+* **Domain Target:** Canonical Cyclic Quadrilateral ($N = 4$ concyclic vertices on circumcircle $S^1$)
+* **Canonical Vertices:** $A, B, C, D$ ordered cyclically counterclockwise.
+* **Center & Radius:** Center $O(0,0)$, $R = 160\text{ mm}$ (academic scale $1\text{ px} = 1\text{ mm}$).
+* **Initial Scene:** Contains circumcircle $S^1$, center $O$, four vertices $A, B, C, D$, four sides $AB, BC, CD, DA$, and zero initial diagonals (diagonals appear only via explicit construction).
 
 ---
 
-## Current Implementation State (Remix 3 Current State)
+## Geometry Tools & Semantic Commands
 
-| Package / Milestone | Component Name | Factual Status | Files / Tests |
-| :--- | :--- | :--- | :--- |
-| **R2-00** | **Foundation / Skeleton** | **FROZEN** | `remix2/src/index.ts`<br>`remix2/tests/foundation.test.ts` |
-| **R2-01** | **Universal Geometry State** | **FROZEN** | `remix2/src/kernel/state/geometryState.ts`<br>`remix2/tests/geometryState.test.ts` |
-| **R2-02** | **Domain Profile Contract** | **FROZEN** | `remix2/src/types/geometry.ts`<br>`remix2/tests/domainProfiles.test.ts` |
-| **R2-03** | **Topology & Arc Guard** | **FROZEN** | `remix2/src/kernel/topology/topologyGuard.ts`<br>`remix2/tests/topologyGuard.test.ts` |
-| **R2-04** | **Universal Arc/Chord Normalizer** | **FROZEN** | `remix2/src/kernel/arcChordNormalizer.ts`<br>`remix2/tests/arcChordNormalizer.test.ts` |
-| **R2-05** | **UI Shell & Headless Projection** | **FROZEN** | `remix2/src/ui/`<br>`remix2/tests/uiShell.test.ts` |
-| **R2-05.1** | **Canonical Tools & Dynamic DAG** | **FROZEN** | `remix2/src/ui/state/auxiliaryEngine.ts`<br>`remix2/tests/toolsAndAuxiliary.test.ts` |
-| **R2-05.2** | **Semantic Command Dispatcher** | **FROZEN** | `remix2/src/ui/state/commandDispatcher.ts`<br>`remix2/tests/commandDispatcher.test.ts` |
-| **Step 1 Normalization** | **Geometry vs Viewport Decoupling** | **FROZEN** | `remix2/src/kernel/dag/geometryCore.ts`<br>`remix2/tests/normalizationStep1.test.ts` |
-| **Machine Control** | **Machine Angle Control & DAG** | **FROZEN** | `remix2/tests/machineAngleControlRegression.test.ts` |
-| **Snapshot Layer** | **GeometryStateSnapshot DTO** | **FROZEN** | `remix2/src/types/snapshot.ts`<br>`remix2/tests/geometryStateSnapshotRegression.test.ts` |
-| **Area Metrics** | **Reference Circle & Area Metrics** | **FROZEN** | `remix2/tests/areaMeasurementRegression.test.ts` |
-| **Research Table** | **Row Mapper & Read-Only Table** | **FROZEN** | `remix2/src/research/tableMapper.ts`<br>`remix2/src/ui/components/GeometryResearchTable.tsx` |
-| **Checkpoint Buffer** | **3-Slot Operational Return Memory** | **FROZEN** | `remix2/src/research/checkpointBuffer.ts`<br>`remix2/tests/checkpointBufferRegression.test.ts` |
-| **Observation Utils** | **Agent Observation Utilities** | **FROZEN** | `remix2/src/research/snapshotDiff.ts`<br>`remix2/tests/agentObservationUtilities.test.ts` |
-| **R3-01** | **Two-Plane Research Session** | **IMPLEMENTED** | `remix2/src/ui/types/researchSession.ts`<br>`remix2/tests/twoPlaneScenario.test.ts`<br>`remix2/tests/runtimeCrashFix.test.ts` |
-| **R3-01.1** | **Research Plane UI Controls & Status** | **IMPLEMENTED** | `remix2/src/ui/components/ResearchPlaneControls.tsx`<br>`remix2/tests/researchPlaneControls.test.ts` |
-| **R3-01.2** | **Same-Stand Construction Clone** | **IMPLEMENTED / TESTED**<br>*(Agent Access: NOT YET AUDITED)* | `remix2/src/research/planeClone.ts`<br>`remix2/tests/tangentAndPlaneClone.test.ts` |
-| **R3-02** | **Headless Agent Interface Adapter** | **IMPLEMENTED / TESTED** | `remix2/src/research/agentInterface.ts`<br>`remix2/tests/agentInterface.test.ts` |
-| **R3-03** | **Tangent Tool & Quantity UX (1\|2)** | **IMPLEMENTED / TESTED**<br>*(Agent Access: NOT YET AUDITED)* | `remix2/src/ui/canvas/SchoolToolbar.tsx`<br>`remix2/src/ui/canvas/GeometryCanvas.tsx`<br>`remix2/tests/tangentAndPlaneClone.test.ts` |
-| **R3-04.1** | **Point-First Construction Protocol** | **IMPLEMENTED / TESTED** | `remix2/src/ui/canvas/pointResolution.ts`<br>`remix2/tests/segmentCommitRegression.test.ts` |
-| **R3-04.2** | **Structural Passport & Invariants** | **IMPLEMENTED / TESTED** | `remix2/src/research/structuralPassport.ts`<br>`remix2/tests/structuralPassport.test.ts` |
-| **R3-05** | **Universal Construction Pattern (UCP)** | **FUTURE / CONCEPTUAL** | Cross-stand portable serialization & inter-stand compatibility validation |
+The stand features canonical tools powered by a unified headless `CommandDispatcher`:
+
+1. **Select (`SELECT`):** Select entities or drag canonical vertices $A, B, C, D$.
+2. **Point (`CONSTRUCT_POINT`):** Create free, snapped-to-circle, or snapped-to-segment points.
+3. **Segment (`CONSTRUCT_SEGMENT`):** Connect two points with a segment using Point-First resolution.
+4. **Ruler (`MEASURE_DISTANCE`):** Measure distance between two points in mm.
+5. **Compass (`CONSTRUCT_COMPASS`):** Anchor needle and set leg span to draw circles.
+6. **Line / Circle (`CONSTRUCT_LINE`, `CONSTRUCT_CIRCLE`):** Construct infinite lines or center-radius circles.
+7. **Parallel (`CONSTRUCT_PARALLEL`):** Construct a line through a point parallel to a reference segment.
+8. **Perpendicular (`CONSTRUCT_PERPENDICULAR`):** Construct a line through a point perpendicular to a reference segment.
+9. **Angle Bisector (`CONSTRUCT_ANGLE_BISECTOR`):** Bisect an angle defined by 3 points.
+10. **Diagonal (`CONSTRUCT_DIAGONAL`):** Single-click vertex selection automatically constructs diagonal to opposite vertex ($A \leftrightarrow C$, $B \leftrightarrow D$).
+11. **Tangent (`CONSTRUCT_TANGENT`):** Construct tangent line to $S^1$ at a selected point (supports 1 | 2 batch quantity modes).
+12. **Intersection (`CONSTRUCT_INTERSECTION`):** Detect and materialize line-line and segment-segment intersection points ($I_1, I_2, I_3$ namespace).
+13. **Eraser (`ERASE_ENTITY`):** Construction-aware entity deletion with dependency DAG cleanup (protecting canonical vertices $A, B, C, D$, center $O$, and circumcircle $S^1$).
 
 ---
 
-## Active Gaps & Deferred Items
+## Key Research & Localization Features
 
-- **GAP-B (Custom Construction Observables):** Research Table v0.1 currently projects macro area metrics ($S_{circle}, S_{quad}, S_{gap}, K_{fill}, K_{gap}$). Arbitrary construction lengths (e.g. `diag_A_C`) are accessible to agents via `GET_ENTITY_MEASUREMENT` and `Snapshot.constructions`, but not yet mapped as customizable table columns (*Status: OPEN / NON-BLOCKING*).
-- **GAP-E (High-Level Batch Exploration Command):** Batch exploration exists as pure headless function `runParametricExploration(...)`. Encapsulating the full sweep into a single high-level `SemanticCommand` is deferred (*Status: OPEN / DEFERRED*).
-- **GAP-INT (Circle Intersections):** Dynamic recomputation currently supports `LINE × LINE`, `LINE × SEGMENT`, and `SEGMENT × SEGMENT`. `LINE × CIRCLE` and `CIRCLE × CIRCLE` are not yet implemented (*Status: OPEN / FUTURE CAPABILITY*).
-- **GAP-CP-01 (UI Project Lifecycle Binding):** `CheckpointBuffer` supports dependency injection via `CommandExecutionContext`, but React UI shell currently uses session-level buffer (*Status: DEFERRED*).
+* **Construction Undo (LIFO):** Dedicated Undo button with pre-command snapshots, atomic rollback, and isolation from non-construction UI state changes.
+* **Construction-Aware Eraser:** Recursively removes selected objects and their dependent construction-owned children while preserving shared or canonical objects.
+* **Dockable Toolbar:** Floating tool palette configurable to `LEFT`, `RIGHT`, or `BOTTOM` positions with safe-area bounds.
+* **Two-Plane Research Session:** Independent `Plane 1` and `Plane 2` workspaces with `BUILDING` and `FIXED` lifecycle locks.
+* **AAM Language Kernel & Semantic Gateway (RU / UA / EN):** Integrated multi-language gateway driven by `translations.ts` and `getSavedLanguage` / `saveLanguagePreference` storing user preference in `localStorage` (`cqns_language_preference`).
+* **Complete Panel Localization:** Full 3-language translation across all UI panels:
+  - Summary Table Panel
+  - Structural Passport Panel
+  - AAM Gateway Panel
+  - Education Panel (including the 12-step Agent Research Checklist and DRA Heuristics)
+  - Geometry Research Table
+  - Numeric Angles Modal
+  - Research Plane Controls
+* **Agent Research Checklist:** 12-step research protocol (Question, Object, Variable, Construction, Measurement, Relation, Parameter Sweep, Pattern, Hypothesis, Counterexample, Next Experiment, Epistemic Status) with localized explanations for RU, UA, and EN.
+* **Deterministic Reasoning Anchor (DRA):** Methodological heuristic defining boundaries between tool-verified facts, agent interpretations, and hypotheses.
+
+---
+
+## Current Status Matrix
+
+| Feature / Subsystem | Code Status | Verification Status |
+| :--- | :--- | :--- |
+| Universal Geometry Kernel (`GeometryCore`) | `IMPLEMENTED` | `PASSED` (23 Test Suites) / **NOT BROWSER VERIFIED** |
+| Headless Command Dispatcher | `IMPLEMENTED` | `PASSED` (Automated Test) / **NOT BROWSER VERIFIED** |
+| Construction Undo (LIFO) | `IMPLEMENTED` | **NOT BROWSER VERIFIED** |
+| Construction-Aware Eraser | `IMPLEMENTED` | **NOT BROWSER VERIFIED** |
+| Dockable Toolbar (LEFT/RIGHT/BOTTOM) | `IMPLEMENTED` | **NOT BROWSER VERIFIED** |
+| Single-Click Semantic Diagonal Tool | `IMPLEMENTED` | **NOT BROWSER VERIFIED** |
+| Intersection Research Mode | `IMPLEMENTED` | **NOT BROWSER VERIFIED** |
+| Two-Plane Research (Plane 1 / Plane 2) | `IMPLEMENTED` | `PASSED` (Automated Test) / **NOT BROWSER VERIFIED** |
+| Language Switcher (RU / UA / EN) & Persistence | `IMPLEMENTED` | `PASSED` (Build & Typecheck) / **NOT BROWSER VERIFIED** |
+| Education Panel & 12-Step Checklist | `IMPLEMENTED` | `PASSED` (Automated Test) / **NOT BROWSER VERIFIED** |
+| Line × Circle / Circle × Circle Intersections | `PARTIAL` | **NOT BROWSER VERIFIED** (Math in core, UI materialization pending) |
+| Mobile Touch Dragging | `PARTIAL` | **NOT BROWSER VERIFIED** |
+
+---
+
+## Project Documentation Index
+
+Detailed architectural documentation is available in [`/docs`](./docs):
+
+* **[Architecture (`docs/ARCHITECTURE.md`)](./docs/ARCHITECTURE.md):** Layered hierarchy, kernel immutability, DAG recomputation, and plane isolation.
+* **[Tools & Commands (`docs/TOOLS_COMMANDS.md`)](./docs/TOOLS_COMMANDS.md):** Reference for all semantic construction commands, inputs, outputs, and provenance.
+* **[Localization (`docs/LOCALIZATION.md`)](./docs/LOCALIZATION.md):** RU/UA/EN language gateway, `translations.ts` structure, and `localStorage` persistence contracts.
+* **[Research Workspace (`docs/RESEARCH.md`)](./docs/RESEARCH.md):** Two-plane research sessions, 12-step Agent Research Checklist, and DRA heuristics.
+* **[Verification & Testing (`docs/VERIFICATION.md`)](./docs/VERIFICATION.md):** 23 regression test suites, typecheck procedures, and manual browser verification protocol.
+* **[Architectural Decisions (`docs/DECISIONS.md`)](./docs/DECISIONS.md):** Architectural Decision Records (ADR-001 through ADR-020).
+
+---
+
+## Getting Started & Scripts
+
+```bash
+# Install dependencies
+npm install
+
+# Run Vite development server (Port 3000)
+npm run dev
+
+# Run TypeScript type check
+npm run lint
+
+# Run all 23 regression test suites
+npm run test
+
+# Build production bundle
+npm run build
+```

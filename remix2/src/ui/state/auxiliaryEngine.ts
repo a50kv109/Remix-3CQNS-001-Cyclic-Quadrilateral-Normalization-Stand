@@ -261,9 +261,11 @@ export function findSnapTarget(
   canonicalVertices: readonly { id: string; cartesian: Point }[],
   circumcircle: { center: Point; radius: number },
   auxiliaryPoints: readonly AuxiliaryPoint[],
-  chords: readonly { id: string; p1: Point; p2: Point }[],
+  chords: readonly { id: string; p1: Point; p2: Point; label?: string }[],
   auxiliarySegments: readonly AuxiliarySegment[],
-  threshold: number = 14
+  threshold: number = 14,
+  enableIntersectionCandidates: boolean = false,
+  auxiliaryLines: readonly AuxiliaryLine[] = []
 ): SnapTarget | null {
   let closest: SnapTarget | null = null;
   let minDistance = threshold;
@@ -298,7 +300,7 @@ export function findSnapTarget(
     }
   }
 
-  // 3. Auxiliary Points (P, E, F, etc.)
+  // 3. Auxiliary Points (E, F, G, I₁, I₂, etc.)
   for (const ap of auxiliaryPoints) {
     const d = euclideanDistance(worldX, worldY, ap.x, ap.y);
     if (d <= minDistance) {
@@ -315,9 +317,117 @@ export function findSnapTarget(
   }
 
   // If a discrete point (center, canonical vertex, auxiliary point) was matched within threshold,
-  // return it with top priority over continuous curves (circumference or chords).
+  // return it with top priority.
   if (closest) {
     return closest;
+  }
+
+  // 3b. Virtual Intersection Candidates (Active ONLY when enableIntersectionCandidates is true)
+  if (enableIntersectionCandidates) {
+    // Gather all line-like objects
+    interface LineLikeEntity {
+      id: string;
+      label: string;
+      p1: { x: number; y: number };
+      p2: { x: number; y: number };
+      isInfinite?: boolean;
+    }
+
+    const lineEntities: LineLikeEntity[] = [];
+
+    // Chords
+    for (const ch of chords) {
+      lineEntities.push({
+        id: ch.id,
+        label: ch.label || ch.id,
+        p1: ch.p1,
+        p2: ch.p2,
+        isInfinite: false
+      });
+    }
+
+    // Auxiliary Segments
+    for (const seg of auxiliarySegments) {
+      const p1 = auxiliaryPoints.find((p) => p.id === seg.p1Id) ||
+        canonicalVertices.find((v) => v.id === seg.p1Id)?.cartesian;
+      const p2 = auxiliaryPoints.find((p) => p.id === seg.p2Id) ||
+        canonicalVertices.find((v) => v.id === seg.p2Id)?.cartesian;
+      if (p1 && p2) {
+        lineEntities.push({
+          id: seg.id,
+          label: seg.label || seg.id,
+          p1: { x: p1.x, y: p1.y },
+          p2: { x: p2.x, y: p2.y },
+          isInfinite: false
+        });
+      }
+    }
+
+    // Auxiliary Lines
+    for (const line of auxiliaryLines) {
+      if (line.anchorPoint && line.direction) {
+        lineEntities.push({
+          id: line.id,
+          label: line.label || line.id,
+          p1: { x: line.anchorPoint.x, y: line.anchorPoint.y },
+          p2: {
+            x: line.anchorPoint.x + line.direction.dx,
+            y: line.anchorPoint.y + line.direction.dy
+          },
+          isInfinite: true
+        });
+      }
+    }
+
+    // Check all pairs for intersection
+    for (let i = 0; i < lineEntities.length; i++) {
+      for (let j = i + 1; j < lineEntities.length; j++) {
+        const e1 = lineEntities[i];
+        const e2 = lineEntities[j];
+
+        let interPt: { x: number; y: number } | null = null;
+        if (e1.isInfinite || e2.isInfinite) {
+          interPt = calculateLineIntersection(e1.p1, e1.p2, e2.p1, e2.p2);
+          // If one is finite segment, verify point is within segment bounds
+          if (interPt && !e1.isInfinite && !onSegment(e1.p1, interPt, e1.p2)) {
+            interPt = null;
+          }
+          if (interPt && !e2.isInfinite && !onSegment(e2.p1, interPt, e2.p2)) {
+            interPt = null;
+          }
+        } else {
+          interPt = calculateSegmentIntersection(e1.p1, e1.p2, e2.p1, e2.p2);
+        }
+
+        if (interPt) {
+          // Check if this intersection is already materialized as an existing point
+          const alreadyMaterialized = auxiliaryPoints.some(
+            (ap) => euclideanDistance(interPt.x, interPt.y, ap.x, ap.y) < 3.0
+          ) || canonicalVertices.some(
+            (v) => euclideanDistance(interPt.x, interPt.y, v.cartesian.x, v.cartesian.y) < 3.0
+          ) || euclideanDistance(interPt.x, interPt.y, circumcircle.center.x, circumcircle.center.y) < 3.0;
+
+          if (!alreadyMaterialized) {
+            const dist = euclideanDistance(worldX, worldY, interPt.x, interPt.y);
+            if (dist <= minDistance && dist <= 12) {
+              minDistance = dist;
+              closest = {
+                x: interPt.x,
+                y: interPt.y,
+                entityType: 'intersection_candidate',
+                label: `◇ Пересечение (${e1.label} ∩ ${e2.label})`,
+                parentIds: [e1.id, e2.id],
+                distance: dist
+              };
+            }
+          }
+        }
+      }
+    }
+
+    if (closest) {
+      return closest;
+    }
   }
 
   // 4. Circumcircle boundary (Snap to circumference only if not snapping to a point)

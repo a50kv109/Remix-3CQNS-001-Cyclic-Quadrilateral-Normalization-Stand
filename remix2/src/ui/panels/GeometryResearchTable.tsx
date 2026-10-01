@@ -7,27 +7,33 @@
 
 import React from 'react';
 import { GeometryResearchRow } from '../../research/index';
+import { Language } from '../types/uiTypes';
+import { getTranslation } from '../i18n/translations';
 
 export interface GeometryResearchTableProps {
   readonly rows: readonly GeometryResearchRow[];
+  readonly language?: Language;
   readonly activeStateVersion?: number;
   readonly onSelectRowSnapshot?: (stateVersion: number) => void;
 }
 
 export const GeometryResearchTable: React.FC<GeometryResearchTableProps> = ({
   rows,
+  language = 'RU',
   activeStateVersion,
   onSelectRowSnapshot
 }) => {
+  const t = getTranslation(language);
+
   if (!rows || rows.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center text-slate-400 select-none">
         <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mb-3 text-slate-500">
           ∅
         </div>
-        <p className="text-sm font-medium text-slate-300">Нет данных исследования</p>
+        <p className="text-sm font-medium text-slate-300">{t.noResearchDataTitle}</p>
         <p className="text-xs text-slate-500 mt-1 max-w-xs">
-          Запустите параметрическое исследование или измените положение вершин для формирования строк измерений.
+          {t.noResearchDataSub}
         </p>
       </div>
     );
@@ -39,15 +45,15 @@ export const GeometryResearchTable: React.FC<GeometryResearchTableProps> = ({
       <div className="px-4 py-2.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
         <div>
           <span className="text-[10px] font-mono tracking-wider uppercase text-purple-400 font-semibold block">
-            RESEARCH TABLE v0.1
+            {t.researchTableVersion}
           </span>
           <span className="text-slate-300 text-xs">
-            Опорное пространство (Круг) ↔ Вписанный объект
+            {t.researchTableSub}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-400">
-            Строк: {rows.length}
+            {t.rowCount} {rows.length}
           </span>
         </div>
       </div>
@@ -57,14 +63,14 @@ export const GeometryResearchTable: React.FC<GeometryResearchTableProps> = ({
         <table className="w-full text-left border-collapse min-w-[700px]">
           <thead className="sticky top-0 z-10 bg-slate-950 text-slate-400 font-medium border-b border-slate-800 shadow-sm text-[11px]">
             <tr>
-              <th scope="col" className="px-3 py-2 text-center w-12 font-mono">Шаг</th>
-              <th scope="col" className="px-3 py-2 font-mono">Параметр</th>
-              <th scope="col" className="px-3 py-2 text-right font-mono">R (мм)</th>
-              <th scope="col" className="px-3 py-2 text-right font-mono">S круга (мм²)</th>
-              <th scope="col" className="px-3 py-2 text-right font-mono">S 4-уг (мм²)</th>
-              <th scope="col" className="px-3 py-2 text-right font-mono">S пустоты (мм²)</th>
-              <th scope="col" className="px-3 py-2 text-right font-mono">Заполнение</th>
-              <th scope="col" className="px-3 py-2 text-right font-mono">Пустота</th>
+              <th scope="col" className="px-3 py-2 text-center w-12 font-mono">{t.thStep}</th>
+              <th scope="col" className="px-3 py-2 font-mono">{t.thParameter}</th>
+              <th scope="col" className="px-3 py-2 text-right font-mono">{t.thRadius}</th>
+              <th scope="col" className="px-3 py-2 text-right font-mono">{t.thAreaCircle}</th>
+              <th scope="col" className="px-3 py-2 text-right font-mono">{t.thAreaQuad}</th>
+              <th scope="col" className="px-3 py-2 text-right font-mono">{t.thAreaVoid}</th>
+              <th scope="col" className="px-3 py-2 text-right font-mono">{t.thFillRatio}</th>
+              <th scope="col" className="px-3 py-2 text-right font-mono">{t.thVoidRatio}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-mono text-slate-200 text-xs">

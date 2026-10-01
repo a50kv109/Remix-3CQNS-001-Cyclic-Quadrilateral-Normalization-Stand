@@ -23,6 +23,7 @@ import { AuxiliaryState } from './types/auxiliaryTypes';
 import { createEmptyAuxiliaryState, recomputeAuxiliaryGeometry } from './state/auxiliaryEngine';
 import { createGeometryStateSnapshot, mapSnapshotsToResearchRows, GeometryResearchRow } from '../research/index';
 import { clonePlane1ToPlane2 } from '../research/planeClone';
+import { getSavedLanguage, saveLanguagePreference } from './i18n/translations';
 
 export const App: React.FC = () => {
   // Research Session State
@@ -139,11 +140,11 @@ export const App: React.FC = () => {
   });
 
   // 3. UI State (Presentation & Interaction)
-  const [uiState, setUiState] = useState<UIState>({
+  const [uiState, setUiState] = useState<UIState>(() => ({
     activeTool: 'SELECT',
     activeTab: 'summary',
     standMode: 'SCHOOL',
-    language: 'RU',
+    language: getSavedLanguage(),
     activePreset: 'SQUARE',
     displayAngleMode: 'DEGREES',
     showScale: true,
@@ -151,6 +152,7 @@ export const App: React.FC = () => {
     showDiagonals: false,
     showGrid: true,
     splitterRatio: 0.5,
+    toolbarPosition: 'LEFT',
     viewport: {
       zoom: 1.0,
       panX: 0,
@@ -158,8 +160,9 @@ export const App: React.FC = () => {
       viewRotationDeg: 0
     },
     hoveredVertexId: null,
-    isNumericModalOpen: false
-  });
+    isNumericModalOpen: false,
+    intersectionMode: false
+  }));
 
   const [isDraggingSplitter, setIsDraggingSplitter] = useState(false);
 
@@ -327,6 +330,7 @@ export const App: React.FC = () => {
   }, []);
 
   const handleLanguageChange = useCallback((lang: Language) => {
+    saveLanguagePreference(lang);
     setUiState((prev) => ({ ...prev, language: lang }));
   }, []);
 
@@ -532,6 +536,7 @@ export const App: React.FC = () => {
         onPresetSelect={handlePresetSelect}
         onReset={handleReset}
         onUndo={handleUndo}
+        stateHistory={stateHistory}
         onExportJson={handleExportJson}
         onExportSvg={handleExportSvg}
       />
@@ -556,22 +561,26 @@ export const App: React.FC = () => {
           {uiState.standMode === 'RESEARCH' && researchSession && (
             <ResearchPlaneControls
               session={researchSession}
+              language={uiState.language}
               onTogglePlane={toggleActivePlane}
               onFixPlane2={fixPlane2}
               onClonePlane1ToPlane2={handleClonePlane1ToPlane2}
             />
           )}
 
-          {/* School Geometry 12 Tools Palette */}
-          <SchoolToolbar
-            activeTool={uiState.activeTool}
-            onSelectTool={handleSelectTool}
-            tangentQuantity={tangentQuantity}
-            onSetTangentQuantity={setTangentQuantity}
-          />
-
           {/* Core SVG Canvas with all 12 active tools & dynamic auxiliary rendering */}
           <div className="flex-1 relative overflow-hidden">
+            <SchoolToolbar
+              activeTool={uiState.activeTool}
+              language={uiState.language}
+              onSelectTool={handleSelectTool}
+              tangentQuantity={tangentQuantity}
+              onSetTangentQuantity={setTangentQuantity}
+              intersectionMode={uiState.intersectionMode}
+              onToggleIntersectionMode={() => setUiState((prev) => ({ ...prev, intersectionMode: !prev.intersectionMode }))}
+              toolbarPosition={uiState.toolbarPosition}
+              onSetToolbarPosition={(pos) => setUiState((prev) => ({ ...prev, toolbarPosition: pos }))}
+            />
             <GeometryCanvas
               presentation={presentation}
               uiState={uiState}
@@ -584,6 +593,7 @@ export const App: React.FC = () => {
               onUpdateAuxiliaryState={setAuxiliaryState}
               onSelectTool={handleSelectTool}
               onSelectEntity={handleSelectEntity}
+              onPushToHistory={(geo, aux) => setStateHistory((prev) => [...prev, { geo, aux }])}
               geometryState={geometryState}
               onUpdateGeometryState={syncStateAndAuxiliary}
               activePlane={uiState.standMode === 'RESEARCH' ? researchSession?.activePlane : 'PLANE_1'}
@@ -596,6 +606,7 @@ export const App: React.FC = () => {
           {/* Bottom Rotation Bar */}
           <CanvasRotationBar
             rotationDeg={uiState.viewport.viewRotationDeg}
+            language={uiState.language}
             onRotationChange={handleRotationChange}
             onStepRotation={handleStepRotation}
             onResetRotation={handleResetRotation}
@@ -632,6 +643,7 @@ export const App: React.FC = () => {
       {/* 3. Numeric Angles Modal */}
       <NumericAnglesModal
         state={geometryState}
+        language={uiState.language}
         isOpen={uiState.isNumericModalOpen}
         onClose={() => setUiState((prev) => ({ ...prev, isNumericModalOpen: false }))}
         onCommitAngles={handleCommitNumericAngles}

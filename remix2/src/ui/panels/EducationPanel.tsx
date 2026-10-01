@@ -7,12 +7,16 @@ import React from 'react';
 import { GraduationCap, BookOpen, CheckCircle, Compass, ShieldCheck } from 'lucide-react';
 import { GeometryPresentationData } from '../projection/presentationModel';
 import { AGENT_RESEARCH_CHECKLIST, DRA_REMINDER } from '../../research/researchGuide';
+import { Language } from '../types/uiTypes';
+import { getTranslation } from '../i18n/translations';
 
 interface EducationPanelProps {
   readonly presentation: GeometryPresentationData;
+  readonly language?: Language;
 }
 
-export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) => {
+export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation, language = 'RU' }) => {
+  const t = getTranslation(language);
   const { oppositeAngleSums, ptolemy, inscribedAngles } = presentation;
 
   return (
@@ -25,10 +29,10 @@ export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) 
           </div>
           <div>
             <h2 className="font-semibold text-slate-100 text-xs">
-              Обучение и Теоремы (School Curriculum & Agent Guide)
+              {t.educationTitle}
             </h2>
             <p className="text-[11px] text-slate-400">
-              Математические доказательства и исследовательский протокол агента
+              {t.educationSubTitle}
             </p>
           </div>
         </div>
@@ -39,17 +43,17 @@ export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) 
         <div className="flex items-center justify-between">
           <span className="font-semibold text-amber-300 flex items-center gap-1.5">
             <Compass className="w-3.5 h-3.5 text-amber-400" />
-            Протокол исследователя (Agent Research Checklist)
+            {t.checklistTitle}
           </span>
           <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 font-mono text-[10px] font-semibold border border-amber-800">
             HEURISTIC RAILS
           </span>
         </div>
         <p className="text-slate-400 text-[11px]">
-          Методические вопросы для формулирования исследовательских экспериментов:
+          {t.checklistSubTitle}
         </p>
         <div className="space-y-1.5 pt-1">
-          {AGENT_RESEARCH_CHECKLIST.map((item) => (
+          {t.researchChecklist.map((item) => (
             <div key={`chk-${item.stepNumber}`} className="p-1.5 bg-slate-900 rounded border border-slate-800/80 flex gap-2 text-[11px]">
               <span className="font-mono text-amber-400 font-bold shrink-0">{item.stepNumber}. {item.name}:</span>
               <span className="text-slate-300">{item.question}</span>
@@ -61,20 +65,24 @@ export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) 
         <div className="mt-2 p-2.5 bg-slate-900/90 rounded border border-cyan-800/60 flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5 text-cyan-300 font-semibold">
             <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
-            <span>{DRA_REMINDER.title}</span>
+            <span>{t.draTitle}</span>
           </div>
           <p className="text-slate-400 text-[10px] leading-tight">
-            {DRA_REMINDER.subtitle}
+            {t.draSubtitle}
           </p>
-          <div className="flex gap-1.5 pt-1">
-            {DRA_REMINDER.epistemicBoundary.map((bound, idx) => (
-              <span key={`bnd-${idx}`} className="px-1.5 py-0.5 bg-slate-950 rounded text-[9px] font-mono text-cyan-300 border border-cyan-900">
-                {bound}
-              </span>
-            ))}
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            <span className="px-1.5 py-0.5 bg-slate-950 rounded text-[9px] font-mono text-cyan-300 border border-cyan-900">
+              {t.draToolVerifiedFact}
+            </span>
+            <span className="px-1.5 py-0.5 bg-slate-950 rounded text-[9px] font-mono text-cyan-300 border border-cyan-900">
+              {t.draAgentInterpretation}
+            </span>
+            <span className="px-1.5 py-0.5 bg-slate-950 rounded text-[9px] font-mono text-cyan-300 border border-cyan-900">
+              {t.draAgentHypotheses}
+            </span>
           </div>
           <p className="text-slate-500 text-[9px] italic pt-0.5">
-            {DRA_REMINDER.note}
+            {t.draNote}
           </p>
         </div>
       </div>
@@ -84,21 +92,21 @@ export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) 
         <div className="flex items-center justify-between">
           <span className="font-semibold text-slate-200 flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-purple-400" />
-            Теорема о сумме противоположных углов
+            {t.theoremOppositeTitle}
           </span>
           <span className="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 font-mono text-[10px] font-semibold border border-emerald-800">
-            180° ИНВАРИАНТ
+            {t.theoremOppositeBadge}
           </span>
         </div>
         <p className="text-slate-400 text-[11px]">
-          Сумма противоположных углов четырёхугольника, вписанного в окружность, всегда равна 180°:
+          {t.theoremOppositeDesc}
         </p>
         <div className="p-2 bg-slate-900 rounded font-mono text-center text-emerald-300 text-[11px] space-y-1">
           <div>∠A + ∠C = {oppositeAngleSums.acSumDeg.toFixed(1)}° = 180.0°</div>
           <div>∠B + ∠D = {oppositeAngleSums.bdSumDeg.toFixed(1)}° = 180.0°</div>
         </div>
         <p className="text-slate-500 text-[10px]">
-          Доказательство: Вписанный угол равен половине дуги, на которую он опирается. Сумма дуг BCD и DAB составляет полную окружность (360°), следовательно, ½ · 360° = 180°.
+          {t.theoremOppositeProof}
         </p>
       </div>
 
@@ -107,10 +115,10 @@ export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) 
         <div className="flex items-center justify-between">
           <span className="font-semibold text-slate-200 flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-blue-400" />
-            Теорема о вписанном угле
+            {t.theoremInscribedTitle}
           </span>
           <span className="px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 font-mono text-[10px] font-semibold border border-blue-800">
-            ∠ = ½ ДУГИ
+            {t.theoremInscribedBadge}
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2 text-[11px] font-mono pt-1">
@@ -119,7 +127,7 @@ export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) 
               <span className="text-slate-400">∠{ang.vertexId} = </span>
               <span className="text-amber-400 font-bold">{ang.angleDeg.toFixed(1)}°</span>
               <span className="text-slate-500 text-[10px] block">
-                ½ от дуги {ang.subtendedArcDeg.toFixed(1)}°
+                {t.theoremInscribedArcHalf} {ang.subtendedArcDeg.toFixed(1)}°
               </span>
             </div>
           ))}
@@ -131,20 +139,20 @@ export const EducationPanel: React.FC<EducationPanelProps> = ({ presentation }) 
         <div className="flex items-center justify-between">
           <span className="font-semibold text-slate-200 flex items-center gap-1.5">
             <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-            Теорема Птолемея для циклического четырёхугольника
+            {t.theoremPtolemyTitle}
           </span>
         </div>
         <p className="text-slate-400 text-[11px]">
-          Для любого вписанного четырёхугольника произведение диагоналей равно сумме произведений противоположных сторон:
+          {t.theoremPtolemyDesc}
         </p>
         <div className="p-2 bg-slate-900 rounded font-mono text-center text-blue-300 text-[11px]">
           AC · BD = AB · CD + BC · DA
         </div>
         <div className="flex items-center justify-between text-[11px] font-mono p-2 bg-slate-900/60 rounded border border-slate-800">
-          <span>Диагонали: {ptolemy.diagonalProduct.toFixed(0)}</span>
+          <span>{t.theoremPtolemyDiagonals} {ptolemy.diagonalProduct.toFixed(0)}</span>
           <span className="text-slate-500">=</span>
-          <span>Стороны: {ptolemy.oppositeProductSum.toFixed(0)}</span>
-          <span className="text-emerald-400 font-bold">✓ Совпадает</span>
+          <span>{t.theoremPtolemySides} {ptolemy.oppositeProductSum.toFixed(0)}</span>
+          <span className="text-emerald-400 font-bold">{t.theoremPtolemyMatches}</span>
         </div>
       </div>
     </div>

@@ -11,6 +11,8 @@ export type Plane2Lifecycle = 'BUILDING' | 'FIXED';
 
 export type Language = 'RU' | 'UA' | 'EN';
 
+export type ToolbarPosition = 'LEFT' | 'RIGHT' | 'BOTTOM';
+
 export type PresetType = 'SQUARE' | 'RECTANGLE' | 'TRAPEZOID' | 'GENERAL';
 
 export type CanonicalToolId =
@@ -51,7 +53,9 @@ export interface UIState {
   readonly showDiagonals: boolean;
   readonly showGrid: boolean;
   readonly splitterRatio: number; // 0.0 to 1.0 (default 0.5)
+  readonly toolbarPosition: ToolbarPosition;
   readonly viewport: ViewportState;
   readonly hoveredVertexId: string | null;
   readonly isNumericModalOpen: boolean;
+  readonly intersectionMode: boolean;
 }

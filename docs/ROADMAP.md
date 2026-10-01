@@ -40,6 +40,7 @@
 | **R3-03** | **Tangent Tool & Session Quantity UX (1\|2)** | **IMPLEMENTED / TESTED**<br>*(Agent Access: NOT YET AUDITED)* | `remix2/src/ui/canvas/SchoolToolbar.tsx`<br>`remix2/src/ui/canvas/GeometryCanvas.tsx`<br>`remix2/tests/tangentAndPlaneClone.test.ts` |
 | **R3-04.1** | **Point-First Universal Construction Protocol** | **IMPLEMENTED / TESTED** | `remix2/src/ui/canvas/pointResolution.ts`<br>`remix2/tests/segmentCommitRegression.test.ts` |
 | **R3-04.2** | **Structural Passport Projection & Invariants** | **IMPLEMENTED / TESTED** | `remix2/src/research/structuralPassport.ts`<br>`remix2/tests/structuralPassport.test.ts` |
+| **R3-06** | **AAM Language Kernel & Multi-Language Gateway (RU/UA/EN)** | **IMPLEMENTED / TESTED** | `remix2/src/ui/i18n/translations.ts`<br>`remix2/tests/researchGuide.test.ts` |
 | **R3-05** | **Universal Construction Pattern (UCP)** | **FUTURE / CONCEPTUAL** | Cross-stand portable serialization & inter-stand compatibility validation |
 
 ---

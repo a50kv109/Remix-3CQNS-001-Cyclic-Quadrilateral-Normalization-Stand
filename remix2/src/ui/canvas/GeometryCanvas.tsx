@@ -65,6 +65,7 @@ interface GeometryCanvasProps {
   readonly onUpdateAuxiliaryState: (updater: (prev: AuxiliaryState) => AuxiliaryState) => void;
   readonly onSelectTool: (tool: CanonicalToolId) => void;
   readonly onSelectEntity: (id: string | null, type: string | null) => void;
+  readonly onPushToHistory: (geo: UniversalGeometryState, aux: AuxiliaryState) => void;
   readonly geometryState?: UniversalGeometryState;
   readonly onUpdateGeometryState?: (state: UniversalGeometryState) => void;
   readonly activePlane?: ActivePlane;
@@ -85,6 +86,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
   onUpdateAuxiliaryState,
   onSelectTool,
   onSelectEntity,
+  onPushToHistory,
   geometryState,
   onUpdateGeometryState,
   activePlane,
@@ -193,7 +195,9 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       activeAuxPoints,
       activeChords,
       activeSegments,
-      14 / zoom
+      14 / zoom,
+      uiState.intersectionMode,
+      auxiliaryState.lines
     );
     if (snap) {
       return { pt: { x: snap.x, y: snap.y }, snap };
@@ -243,6 +247,9 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       };
       const result = dispatchSemanticCommand(cmd, ctx);
       if (result.success) {
+        if (geometryState) {
+          onPushToHistory(geometryState, activeAux);
+        }
         if (result.updatedGeometryState && onUpdateGeometryState) {
           onUpdateGeometryState(result.updatedGeometryState);
         }
@@ -601,27 +608,17 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     }
 
     // ==========================================
-    // 10. DIAGONAL TOOL (Диагональ) — Strictly Explicit
+    // 10. DIAGONAL TOOL (Диагональ) — Automatic
     // ==========================================
     if (isTool('DIAGONAL')) {
-      if (toolStep === 0) {
-        if (snap?.entityType === 'vertex' && snap.entityId) {
-          setStepP1({ id: snap.entityId, x: clickPt.x, y: clickPt.y, label: snap.entityId });
-          setToolStep(1);
-        } else {
-          showToast('Для диагонали кликните первую вершину четырёхугольника (A, B, C или D)');
-        }
-      } else if (toolStep === 1 && stepP1) {
-        if (snap?.entityType === 'vertex' && snap.entityId) {
-          const res = executeCommand({
-            type: 'CONSTRUCT_DIAGONAL',
-            vertex1Id: stepP1.id!,
-            vertex2Id: snap.entityId
-          });
-          if (res.success) handleCancelTool();
-        } else {
-          showToast('Кликните вторую вершину (A, B, C или D)');
-        }
+      if (snap?.entityType === 'vertex' && snap.entityId) {
+        const res = executeCommand({
+          type: 'CONSTRUCT_DIAGONAL',
+          sourceVertexId: snap.entityId
+        });
+        if (res.success) handleCancelTool();
+      } else {
+        showToast('Кликните вершину (A, B, C или D)');
       }
       return;
     }
@@ -832,9 +829,7 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       case 'DIAGONAL':
         return {
           title: 'Инструмент «Диагональ»',
-          subtitle: toolStep === 0
-            ? 'Кликните первую вершину четырёхугольника'
-            : `Кликните противоположную вершину (для ${stepP1!.id} это ${stepP1!.id === 'A' ? 'C' : stepP1!.id === 'B' ? 'D' : stepP1!.id === 'C' ? 'A' : 'B'})`
+          subtitle: 'Кликните любую вершину четырёхугольника (A, B, C или D) для построения диагонали'
         };
       case 'TANGENT':
         if (tangentQuantity === 1) {
@@ -1382,17 +1377,17 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
                   <circle
                     cx={pt.x}
                     cy={pt.y}
-                    r="4.5"
+                    r={pt.type === 'intersection' ? '5' : '4.5'}
                     fill={isHoverEraser ? '#ef4444' : pt.color || '#38bdf8'}
-                    stroke="#0f172a"
-                    strokeWidth="1.5"
+                    stroke={pt.type === 'intersection' ? '#fff' : '#0f172a'}
+                    strokeWidth={pt.type === 'intersection' ? '2' : '1.5'}
                     filter="url(#vertex-shadow)"
                   />
                   <text
-                    x={pt.x + 7}
-                    y={pt.y - 7}
-                    fill={isHoverEraser ? '#ef4444' : '#38bdf8'}
-                    fontSize="11"
+                    x={pt.x + (pt.type === 'intersection' ? 9 : 7)}
+                    y={pt.y - (pt.type === 'intersection' ? 9 : 7)}
+                    fill={isHoverEraser ? '#ef4444' : (pt.type === 'intersection' ? '#f59e0b' : '#38bdf8')}
+                    fontSize={pt.type === 'intersection' ? "13" : "11"}
                     fontFamily="sans-serif"
                     fontWeight="bold"
                   >
@@ -1690,23 +1685,47 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
           {/* 15. Snap Ring Indicator on Cursor */}
           {snapTarget && (
             <g id="snap-cursor-indicator">
-              <circle
-                cx={snapTarget.x}
-                cy={snapTarget.y}
-                r="10"
-                fill="none"
-                stroke="#a855f7"
-                strokeWidth="2"
-                className="animate-ping"
-              />
-              <circle
-                cx={snapTarget.x}
-                cy={snapTarget.y}
-                r="5"
-                fill="#a855f7"
-                stroke="#ffffff"
-                strokeWidth="1.5"
-              />
+              {snapTarget.entityType === 'intersection_candidate' ? (
+                <>
+                  <path
+                    d={`M ${snapTarget.x - 8} ${snapTarget.y} L ${snapTarget.x} ${snapTarget.y - 8} L ${snapTarget.x + 8} ${snapTarget.y} L ${snapTarget.x} ${snapTarget.y + 8} Z`}
+                    fill="none"
+                    stroke="#f59e0b"
+                    strokeWidth="2"
+                    className="animate-pulse"
+                  />
+                  <text
+                    x={snapTarget.x + 10}
+                    y={snapTarget.y - 10}
+                    fill="#f59e0b"
+                    fontSize="12"
+                    fontFamily="monospace"
+                    fontWeight="bold"
+                  >
+                    {snapTarget.label}
+                  </text>
+                </>
+              ) : (
+                <>
+                  <circle
+                    cx={snapTarget.x}
+                    cy={snapTarget.y}
+                    r="10"
+                    fill="none"
+                    stroke="#a855f7"
+                    strokeWidth="2"
+                    className="animate-ping"
+                  />
+                  <circle
+                    cx={snapTarget.x}
+                    cy={snapTarget.y}
+                    r="5"
+                    fill="#a855f7"
+                    stroke="#ffffff"
+                    strokeWidth="1.5"
+                  />
+                </>
+              )}
             </g>
           )}
         </g>

@@ -6,6 +6,7 @@
 import React from 'react';
 import { DisplayAngleMode, UIState } from '../types/uiTypes';
 import { GeometryPresentationData } from '../projection/presentationModel';
+import { getTranslation } from '../i18n/translations';
 
 interface CanvasControlRibbonProps {
   readonly uiState: UIState;
@@ -24,12 +25,14 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
   onToggleRadii,
   onZoomChange
 }) => {
+  const t = getTranslation(uiState.language);
+
   const centerStatusText =
     presentation.centerPosition === 'INSIDE'
-      ? 'Центр O строго внутри четырёхугольника'
+      ? t.centerInside
       : presentation.centerPosition === 'ON CHORD'
-      ? 'Центр O лежит на хорде (Фалес)'
-      : 'Центр O вне четырёхугольника';
+      ? t.centerOnChord
+      : t.centerOutside;
 
   return (
     <div className="bg-slate-900/90 border-b border-slate-800 p-2.5 flex flex-col gap-2 select-none text-xs">
@@ -37,12 +40,12 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 rounded font-mono font-semibold bg-purple-600 text-white text-[11px]">
-            GEOMETRY
+            {t.geometryBadge}
           </span>
-          <span className="text-slate-300 font-medium">Интерактивный циферблат</span>
+          <span className="text-slate-300 font-medium">{t.interactiveDial}</span>
         </div>
         <span className="text-slate-400 text-[11px]">
-          Тяните вершины A, B, C, D или вращайте диск ↻
+          {t.dragHint}
         </span>
       </div>
 
@@ -51,12 +54,12 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[11px] font-mono">
             <span className="w-2 h-2 rounded-full bg-purple-400" />
-            <span className="text-slate-200">R = {presentation.radius.toFixed(1)} мм</span>
+            <span className="text-slate-200">R = {presentation.radius.toFixed(1)} mm</span>
             <span className="text-slate-500">({Math.round(presentation.radius)} px)</span>
           </div>
 
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[11px] font-mono">
-            <span className="text-slate-200">D = {presentation.diameter.toFixed(1)} мм</span>
+            <span className="text-slate-200">D = {presentation.diameter.toFixed(1)} mm</span>
             <span className="text-slate-500">({Math.round(presentation.diameter)} px)</span>
             <span className="px-1 text-[10px] rounded bg-purple-900/60 text-purple-300 font-semibold border border-purple-700/60">
               D = 2R
@@ -64,7 +67,7 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
           </div>
 
           <div className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-[11px] text-slate-400">
-            1 px = 1 мм (учебный)
+            {t.unitLearner}
           </div>
 
           {/* Zoom Multipliers */}
@@ -104,7 +107,7 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
                 : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
             }`}
           >
-            Градусы (0°..360°)
+            {t.degreesLabel}
           </button>
           <button
             onClick={() => onAngleModeChange('RADIANS')}
@@ -114,7 +117,7 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
                 : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
             }`}
           >
-            Радианы (0..2π)
+            {t.radiansLabel}
           </button>
           <button
             onClick={() => onAngleModeChange('FRACTIONS')}
@@ -124,7 +127,7 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
                 : 'bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800'
             }`}
           >
-            Доли цикла (u ∈ [0, 1))
+            {t.fractionsLabel}
           </button>
         </div>
 
@@ -138,7 +141,7 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
                 : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'
             }`}
           >
-            Шкала {uiState.showScale ? 'ON' : 'OFF'}
+            {t.scaleLabel} {uiState.showScale ? 'ON' : 'OFF'}
           </button>
           <button
             onClick={onToggleRadii}
@@ -148,7 +151,7 @@ export const CanvasControlRibbon: React.FC<CanvasControlRibbonProps> = ({
                 : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'
             }`}
           >
-            Радиусы {uiState.showRadii ? 'ON' : 'OFF'}
+            {t.radiiLabel} {uiState.showRadii ? 'ON' : 'OFF'}
           </button>
         </div>
       </div>

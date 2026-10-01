@@ -16,6 +16,7 @@ import {
   Copy
 } from 'lucide-react';
 import { Language, PresetType, StandMode, UIState } from '../../types/uiTypes';
+import { getTranslation } from '../../i18n/translations';
 
 interface HeaderBarProps {
   readonly uiState: UIState;
@@ -24,6 +25,7 @@ interface HeaderBarProps {
   readonly onPresetSelect: (preset: PresetType) => void;
   readonly onReset: () => void;
   readonly onUndo: () => void;
+  readonly stateHistory: any[];
   readonly onExportJson: () => void;
   readonly onExportSvg: () => void;
 }
@@ -35,10 +37,12 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onPresetSelect,
   onReset,
   onUndo,
+  stateHistory,
   onExportJson,
   onExportSvg
 }) => {
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
+  const t = getTranslation(uiState.language);
 
   return (
     <header className="h-14 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between gap-3 text-sm select-none z-30">
@@ -50,14 +54,14 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="font-semibold text-slate-100 text-xs tracking-wide">
-              CQNS-001 Cyclic Quadrilateral Stand
+              {t.standTitle}
             </h1>
             <span className="px-1.5 py-0.5 text-[10px] font-mono bg-purple-900/60 text-purple-300 border border-purple-700/60 rounded">
-              50 / 50 WORKBENCH
+              {t.workbenchBadge}
             </span>
           </div>
           <p className="text-[11px] text-slate-400">
-            Геометрический стенд : Исследование и школьные чертёжные инструменты
+            {t.standSubTitle}
           </p>
         </div>
       </div>
@@ -75,7 +79,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Исследование
+            {t.modeResearch}
           </button>
           <button
             onClick={() => onModeChange('SCHOOL')}
@@ -86,7 +90,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
-            Школьный режим
+            {t.modeSchool}
           </button>
         </div>
 
@@ -112,7 +116,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       <div className="flex items-center gap-2">
         {/* Presets */}
         <div className="flex items-center gap-1 bg-slate-950/70 p-1 rounded-lg border border-slate-800 text-xs">
-          <span className="text-[11px] text-slate-400 px-1">Пресеты:</span>
+          <span className="text-[11px] text-slate-400 px-1">{t.presetsLabel}</span>
           <button
             onClick={() => onPresetSelect('SQUARE')}
             className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
@@ -121,7 +125,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 : 'text-slate-300 hover:bg-slate-800'
             }`}
           >
-            Квадрат
+            {t.presetSquare}
           </button>
           <button
             onClick={() => onPresetSelect('RECTANGLE')}
@@ -131,7 +135,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 : 'text-slate-300 hover:bg-slate-800'
             }`}
           >
-            Прямоугольник
+            {t.presetRectangle}
           </button>
           <button
             onClick={() => onPresetSelect('TRAPEZOID')}
@@ -141,7 +145,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 : 'text-slate-300 hover:bg-slate-800'
             }`}
           >
-            Трапеция
+            {t.presetTrapezoid}
           </button>
           <button
             onClick={() => onPresetSelect('GENERAL')}
@@ -151,7 +155,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 : 'text-slate-300 hover:bg-slate-800'
             }`}
           >
-            Общий
+            {t.presetGeneral}
           </button>
         </div>
 
@@ -162,7 +166,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-md text-xs flex items-center gap-1.5 transition-colors"
           >
             <FileCode className="w-3.5 h-3.5 text-purple-400" />
-            <span>Проект</span>
+            <span>{t.projectMenu}</span>
             <ChevronDown className="w-3 h-3 text-slate-400" />
           </button>
           {isProjectMenuOpen && (
@@ -175,7 +179,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 className="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 text-slate-300"
               >
                 <Download className="w-3.5 h-3.5 text-purple-400" />
-                Экспорт JSON состояния
+                {t.exportJson}
               </button>
               <button
                 onClick={() => {
@@ -185,7 +189,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 className="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 text-slate-300"
               >
                 <Copy className="w-3.5 h-3.5 text-blue-400" />
-                Экспорт SVG чертежа
+                {t.exportSvg}
               </button>
             </div>
           )}
@@ -194,21 +198,24 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
         {/* Reset Button */}
         <button
           onClick={onReset}
-          title="Сбросить состояние стенда"
+          title={t.resetButton}
           className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-md text-xs flex items-center gap-1 transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span>Сброс</span>
+          <span>{t.resetButton}</span>
         </button>
 
         {/* Undo Button */}
         <button
           onClick={onUndo}
-          title="Отменить действие"
-          className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-md text-xs flex items-center gap-1 transition-colors"
+          disabled={!stateHistory || stateHistory.length === 0}
+          title={t.undoButton}
+          className={`px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-md text-xs flex items-center gap-1 transition-colors ${
+            (!stateHistory || stateHistory.length === 0) ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
-          <Undo2 className="w-3.5 h-3.5" />
-          <span>Отменить</span>
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>{t.undoButton}</span>
         </button>
       </div>
     </header>

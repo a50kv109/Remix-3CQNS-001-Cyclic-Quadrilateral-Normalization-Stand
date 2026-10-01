@@ -181,3 +181,17 @@ This document records the foundational architectural decisions governing Geometr
 * **Decision:** Maintain a strict epistemic distinction between Human UI Path and Agent Path. Capabilities implemented in UI components remain marked as `NOT YET AGENT-AUDITED` until corresponding headless agent integration test scenarios are formally executed and verified.
 * **Reason:** Preserves the Prime Constitutional Axiom and prevents hallucinated agent capabilities during external model reviews.
 
+---
+
+## ADR-020 — AAM Language Kernel & Semantic Gateway Integration
+
+* **Status:** ACCEPTED / IMPLEMENTED
+* **Context:** The stand requires full multi-language normalization (`RU`, `UA`, `EN`) across UI shells, analytical tables, structural passports, educational checklist cards, theorem proofs, and modal dialogs with persistent language memory across sessions.
+* **Decision:**
+  1. Centralize language dictionaries in `translations.ts` and expose a unified getter `getTranslation(language)`.
+  2. Implement `getSavedLanguage()` and `saveLanguagePreference(lang)` using browser `localStorage` (`cqns_language_preference`) with safe fallback to `'RU'`.
+  3. Pass `language` down through `UIState` to all panels (`SummaryTablePanel`, `PassportPanel`, `AAMGatewayPanel`, `EducationPanel`, `GeometryResearchTable`, `NumericAnglesModal`, `ResearchPlaneControls`).
+  4. Fully localize the 12-step Agent Research Checklist and DRA Heuristic cards in `RU`, `UA`, and `EN`.
+* **Reason:** Guarantees language normalization, semantic consistency across all research panels, and user preference persistence without breaking mathematical core immutability.
+
+

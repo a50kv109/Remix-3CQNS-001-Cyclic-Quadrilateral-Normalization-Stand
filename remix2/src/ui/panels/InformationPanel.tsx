@@ -14,6 +14,7 @@ import { PassportPanel } from './PassportPanel';
 import { AAMGatewayPanel } from './AAMGatewayPanel';
 import { EducationPanel } from './EducationPanel';
 import { GeometryResearchTable } from './GeometryResearchTable';
+import { getTranslation } from '../i18n/translations';
 
 interface InformationPanelProps {
   readonly uiState: UIState;
@@ -38,6 +39,8 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
   onClearSelection,
   onSelectRowSnapshot
 }) => {
+  const t = getTranslation(uiState.language);
+
   return (
     <div className="flex flex-col h-full bg-slate-900 border-l border-slate-800 select-none overflow-hidden">
       {/* 1. Tab Bar Navigation */}
@@ -52,7 +55,7 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
             }`}
           >
             <Table className="w-3.5 h-3.5" />
-            <span>Сводка</span>
+            <span>{t.tabSummary}</span>
           </button>
 
           <button
@@ -64,7 +67,7 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
             }`}
           >
             <FlaskConical className="w-3.5 h-3.5" />
-            <span>Исследование</span>
+            <span>{t.tabResearch}</span>
           </button>
 
           <button
@@ -76,7 +79,7 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Паспорт</span>
+            <span>{t.tabPassport}</span>
           </button>
 
           <button
@@ -88,7 +91,7 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
             }`}
           >
             <Cpu className="w-3.5 h-3.5" />
-            <span>ААМ Шлюз</span>
+            <span>{t.tabGateway}</span>
           </button>
 
           <button
@@ -100,13 +103,13 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
             }`}
           >
             <GraduationCap className="w-3.5 h-3.5" />
-            <span>Обучение</span>
+            <span>{t.tabEducation}</span>
           </button>
         </div>
 
         {/* Small scale indicator on top right */}
         <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-slate-400 font-mono hidden xl:inline-block whitespace-nowrap">
-          1 px = 1 мм
+          {t.unitLearner}
         </span>
       </div>
 
@@ -116,6 +119,7 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
           <SummaryTablePanel
             presentation={presentation}
             auxiliaryState={auxiliaryState}
+            language={uiState.language}
             onOpenNumericModal={onOpenNumericModal}
             onClearSelection={onClearSelection}
           />
@@ -123,18 +127,19 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
         {uiState.activeTab === 'research' && (
           <GeometryResearchTable
             rows={researchRows}
+            language={uiState.language}
             activeStateVersion={activeStateVersion}
             onSelectRowSnapshot={onSelectRowSnapshot}
           />
         )}
         {uiState.activeTab === 'passport' && (
-          <PassportPanel presentation={presentation} />
+          <PassportPanel presentation={presentation} language={uiState.language} />
         )}
         {uiState.activeTab === 'gateway' && (
-          <AAMGatewayPanel presentation={presentation} />
+          <AAMGatewayPanel presentation={presentation} language={uiState.language} />
         )}
         {uiState.activeTab === 'education' && (
-          <EducationPanel presentation={presentation} />
+          <EducationPanel presentation={presentation} language={uiState.language} />
         )}
       </div>
     </div>

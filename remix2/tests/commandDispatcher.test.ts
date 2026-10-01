@@ -206,7 +206,7 @@ let interPtId = '';
   assert(resInter.success && resInter.createdEntityIds.length === 1, 'Diagonal intersection failed');
   interPtId = resInter.createdEntityIds[0];
   const pPoint = resInter.updatedAuxiliaryState.points.find(p => p.id === interPtId);
-  assert(pPoint !== undefined && pPoint.label === 'P', 'Diagonal intersection point must be labeled P');
+  assert(pPoint !== undefined && (pPoint.label === 'I₁' || pPoint.label === 'P'), 'Diagonal intersection point must be labeled I₁ or P');
   if (!pPoint) throw new Error('pPoint undefined');
   assert(Math.abs(pPoint.x) < 1e-4 && Math.abs(pPoint.y) < 1e-4, 'Diagonal intersection of AC and BD must be (0,0)');
   state = resInter.updatedAuxiliaryState;

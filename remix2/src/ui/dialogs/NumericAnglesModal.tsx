@@ -8,10 +8,13 @@ import { X, Check, AlertCircle } from 'lucide-react';
 import { UniversalGeometryState } from '../../kernel/state/geometryState';
 import { CyclicInput, CyclicMutationDraft } from '../../types/geometry';
 import { TopologyGuard } from '../../kernel/topology/topologyGuard';
+import { Language } from '../types/uiTypes';
+import { getTranslation } from '../i18n/translations';
 
 interface NumericAnglesModalProps {
   readonly state: UniversalGeometryState;
   readonly isOpen: boolean;
+  readonly language?: Language;
   readonly onClose: () => void;
   readonly onCommitAngles: (newAnglesRad: number[]) => void;
 }
@@ -19,10 +22,13 @@ interface NumericAnglesModalProps {
 export const NumericAnglesModal: React.FC<NumericAnglesModalProps> = ({
   state,
   isOpen,
+  language = 'RU',
   onClose,
   onCommitAngles
 }) => {
   if (!isOpen) return null;
+
+  const t = getTranslation(language);
 
   const cyclicInput = state.canonicalInputs as CyclicInput;
   const currentAnglesDeg = cyclicInput.angles.map(
@@ -48,7 +54,7 @@ export const NumericAnglesModal: React.FC<NumericAnglesModalProps> = ({
 
     for (let i = 0; i < parsedAnglesDeg.length; i++) {
       if (!Number.isFinite(parsedAnglesDeg[i])) {
-        setValidationError(`Некорректное значение угла для вершины ${labels[i]}.`);
+        setValidationError(`${t.numericModalInvalidNum} ${labels[i]}.`);
         return;
       }
     }
@@ -83,7 +89,7 @@ export const NumericAnglesModal: React.FC<NumericAnglesModalProps> = ({
         {/* Header */}
         <div className="px-4 py-3 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
           <h3 className="font-semibold text-slate-100 text-sm">
-            Задать углы вершин числом
+            {t.numericModalTitle}
           </h3>
           <button
             onClick={onClose}
@@ -96,13 +102,13 @@ export const NumericAnglesModal: React.FC<NumericAnglesModalProps> = ({
         {/* Content */}
         <div className="p-4 space-y-3">
           <p className="text-slate-400 text-[11px]">
-            Введите значения полярных углов (0°..360°) для вершин A, B, C, D. Углы должны следовать в строго возрастающем циклическом порядке.
+            {t.numericModalDescription}
           </p>
 
           <div className="grid grid-cols-2 gap-3">
             {labels.map((label, idx) => (
               <div key={label} className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
-                <span className="font-bold text-purple-400 text-sm">Вершина {label}:</span>
+                <span className="font-bold text-purple-400 text-sm">{t.numericModalVertex} {label}:</span>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
@@ -133,14 +139,14 @@ export const NumericAnglesModal: React.FC<NumericAnglesModalProps> = ({
             onClick={onClose}
             className="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
           >
-            Отмена
+            {t.numericModalCancel}
           </button>
           <button
             onClick={handleApply}
             className="px-4 py-1.5 rounded-md bg-purple-600 hover:bg-purple-500 text-white font-medium flex items-center gap-1.5 transition-colors shadow-sm"
           >
             <Check className="w-3.5 h-3.5" />
-            Применить
+            {t.numericModalApply}
           </button>
         </div>
       </div>

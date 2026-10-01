@@ -6,12 +6,17 @@
 import React from 'react';
 import { Cpu, Terminal, ShieldAlert, ArrowRight } from 'lucide-react';
 import { GeometryPresentationData } from '../projection/presentationModel';
+import { Language } from '../types/uiTypes';
+import { getTranslation } from '../i18n/translations';
 
 interface AAMGatewayPanelProps {
   readonly presentation: GeometryPresentationData;
+  readonly language?: Language;
 }
 
-export const AAMGatewayPanel: React.FC<AAMGatewayPanelProps> = ({ presentation }) => {
+export const AAMGatewayPanel: React.FC<AAMGatewayPanelProps> = ({ presentation, language = 'RU' }) => {
+  const t = getTranslation(language);
+
   return (
     <div className="flex flex-col h-full overflow-y-auto p-4 select-none text-xs space-y-4">
       {/* 1. Gateway Status Header */}
@@ -22,10 +27,10 @@ export const AAMGatewayPanel: React.FC<AAMGatewayPanelProps> = ({ presentation }
           </div>
           <div>
             <h2 className="font-semibold text-slate-100 text-xs">
-              ААМ Шлюз / SOL Agent Gateway
+              {t.gatewayTitle}
             </h2>
             <p className="text-[11px] text-slate-400">
-              Операционный мост между агентами, верификацией и ядром состояния
+              {t.gatewaySubTitle}
             </p>
           </div>
         </div>
@@ -38,7 +43,7 @@ export const AAMGatewayPanel: React.FC<AAMGatewayPanelProps> = ({ presentation }
       {/* 2. Architectural Pipeline Banner */}
       <div className="p-3 bg-slate-950 rounded-lg border border-slate-800 flex flex-col gap-2">
         <span className="font-semibold text-slate-200">
-          Принцип операционного взаимодействия (SOL Pipeline):
+          {t.pipelineTitle}
         </span>
         <div className="flex items-center gap-2 text-[11px] font-mono text-slate-300 overflow-x-auto py-1">
           <span className="px-2 py-1 bg-slate-900 rounded border border-slate-800">UI / Agent</span>
@@ -59,7 +64,7 @@ export const AAMGatewayPanel: React.FC<AAMGatewayPanelProps> = ({ presentation }
       <div className="border border-slate-800 rounded-lg overflow-hidden bg-slate-950 font-mono text-[11px]">
         <div className="bg-slate-900 px-3 py-2 border-b border-slate-800 font-semibold text-slate-300 flex items-center gap-2">
           <Terminal className="w-3.5 h-3.5 text-blue-400" />
-          <span>Журнал транзакций ядра (State Transaction Stream)</span>
+          <span>{t.transactionStreamTitle}</span>
         </div>
         <div className="p-3 space-y-2 text-slate-400">
           <div className="flex items-start gap-2">
@@ -84,7 +89,7 @@ export const AAMGatewayPanel: React.FC<AAMGatewayPanelProps> = ({ presentation }
       <div className="p-3 rounded-lg bg-slate-900/60 border border-slate-800 flex items-start gap-2.5 text-[11px] text-slate-400">
         <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <span>
-          <strong>Архитектурное разграничение:</strong> Полный операционный диспетчер SOL Gateway (R2-12), Relation Graph (R2-07) и Verification Core (R2-08) будут развёрнуты в последующих запланированных пакетах. Интерфейс готов к подключению их выходных потоков без переделки шаблона представления.
+          <strong>{t.noticeTitle}</strong> {t.noticeBody}
         </span>
       </div>
     </div>

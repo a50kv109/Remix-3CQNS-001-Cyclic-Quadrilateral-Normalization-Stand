@@ -97,9 +97,10 @@ export interface SnapTarget {
   readonly x: number;
   readonly y: number;
   readonly entityId?: string;
-  readonly entityType: 'vertex' | 'point' | 'center' | 'circle' | 'segment' | 'line';
+  readonly entityType: 'vertex' | 'point' | 'center' | 'circle' | 'segment' | 'line' | 'intersection_candidate';
   readonly label?: string;
   readonly distance: number;
+  readonly parentIds?: readonly [string, string];
 }
 
 export type LineCircleSubMode = 'LINE' | 'CIRCLE';

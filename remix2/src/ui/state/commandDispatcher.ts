@@ -116,6 +116,51 @@ export function resolvePoint(id: string, ctx: CommandExecutionContext): Point | 
   return null;
 }
 
+export function toSubscript(num: number): string {
+  const subscripts = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+  return num
+    .toString()
+    .split('')
+    .map((ch) => {
+      const d = parseInt(ch, 10);
+      return isNaN(d) ? ch : subscripts[d];
+    })
+    .join('');
+}
+
+export function allocateOrdinaryPointLabel(existingPoints: readonly AuxiliaryPoint[]): string {
+  const ordinaryLetters = ['E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  const usedLabels = new Set(existingPoints.filter((p) => p.type !== 'intersection').map((p) => p.label));
+  for (const letter of ordinaryLetters) {
+    if (!usedLabels.has(letter)) {
+      return letter;
+    }
+  }
+  let suffix = 1;
+  while (true) {
+    for (const letter of ordinaryLetters) {
+      const candidate = `${letter}${toSubscript(suffix)}`;
+      if (!usedLabels.has(candidate)) {
+        return candidate;
+      }
+    }
+    suffix++;
+  }
+}
+
+export function allocateIntersectionPointLabel(existingPoints: readonly AuxiliaryPoint[]): string {
+  const existingIntersections = existingPoints.filter((p) => p.type === 'intersection');
+  const usedLabels = new Set(existingIntersections.map((p) => p.label));
+  let index = 1;
+  while (true) {
+    const candidate = `I${toSubscript(index)}`;
+    if (!usedLabels.has(candidate)) {
+      return candidate;
+    }
+    index++;
+  }
+}
+
 /**
  * Resolves a readable label for a point.
  */
@@ -234,9 +279,10 @@ export function dispatchSemanticCommand(
       }
 
       const ptId = `pt_${Date.now().toString().slice(-4)}_${currentAux.points.length + 1}`;
+      const pLabel = allocateOrdinaryPointLabel(currentAux.points);
       const newPt: AuxiliaryPoint = {
         id: ptId,
-        label: `P${currentAux.points.length + 1}`,
+        label: pLabel,
         x: finalX,
         y: finalY,
         type: command.pointType,
@@ -766,10 +812,8 @@ export function dispatchSemanticCommand(
     // 11. CONSTRUCT_DIAGONAL COMMAND
     // ============================================================
     case 'CONSTRUCT_DIAGONAL': {
-      const v1 = command.vertex1Id;
-      const v2 = command.vertex2Id;
-
-      if (v1 === v2) {
+      const v1 = (command as any).sourceVertexId || (command as any).vertex1Id;
+      if (!v1 || typeof v1 !== 'string') {
         return {
           status: 'INVALID_GEOMETRY',
           commandType: 'CONSTRUCT_DIAGONAL',
@@ -777,18 +821,14 @@ export function dispatchSemanticCommand(
           createdEntityIds: [],
           affectedEntityIds: [],
           updatedAuxiliaryState: currentAux,
-          message: 'Cannot construct diagonal to same vertex'
+          message: 'Missing source vertex ID'
         };
       }
 
-      // Check non-adjacent vertices in cyclic quadrilateral ABCD
-      const isNonAdjacent =
-        (v1 === 'A' && v2 === 'C') ||
-        (v1 === 'C' && v2 === 'A') ||
-        (v1 === 'B' && v2 === 'D') ||
-        (v1 === 'D' && v2 === 'B');
+      const oppositeMap: Record<string, string> = { A: 'C', B: 'D', C: 'A', D: 'B' };
+      const v2 = (command as any).vertex2Id || oppositeMap[v1.toUpperCase()];
 
-      if (!isNonAdjacent) {
+      if (!v2 || typeof v2 !== 'string') {
         return {
           status: 'INVALID_GEOMETRY',
           commandType: 'CONSTRUCT_DIAGONAL',
@@ -796,7 +836,39 @@ export function dispatchSemanticCommand(
           createdEntityIds: [],
           affectedEntityIds: [],
           updatedAuxiliaryState: currentAux,
-          message: `Vertices ${v1} and ${v2} are adjacent (form base chord, not diagonal)`
+          message: `Vertex ${v1} is not a valid quadrilateral vertex`
+        };
+      }
+
+      // Adjacent vertices or same vertex should be rejected if vertex2Id was explicitly passed
+      if ((command as any).vertex2Id) {
+        const v1Upper = v1.toUpperCase();
+        const v2Upper = v2.toUpperCase();
+        if (v1Upper === v2Upper || oppositeMap[v1Upper] !== v2Upper) {
+          return {
+            status: 'INVALID_GEOMETRY',
+            commandType: 'CONSTRUCT_DIAGONAL',
+            success: false,
+            createdEntityIds: [],
+            affectedEntityIds: [],
+            updatedAuxiliaryState: currentAux,
+            message: `Segment ${v1Upper}${v2Upper} is a side, not a diagonal`
+          };
+        }
+      }
+
+      // Check if diagonal already exists to avoid duplicates
+      const sortedPair = [v1.toUpperCase(), v2.toUpperCase()].sort();
+      const diagId = `diag_${sortedPair.join('_')}`;
+      if (currentAux.segments.some((s) => s.id === diagId || s.id === `diag_${sortedPair.join('')}`)) {
+        return {
+          status: 'SUCCESS',
+          commandType: 'CONSTRUCT_DIAGONAL',
+          success: true,
+          createdEntityIds: [],
+          affectedEntityIds: [],
+          updatedAuxiliaryState: currentAux,
+          message: `Diagonal ${sortedPair.join('')} already exists`
         };
       }
 
@@ -816,10 +888,9 @@ export function dispatchSemanticCommand(
       }
 
       const length = euclideanDistance(p1.x, p1.y, p2.x, p2.y);
-      const diagId = `diag_${v1}_${v2}`;
       const newDiag: AuxiliarySegment = {
         id: diagId,
-        label: `Диагональ ${v1}${v2}`,
+        label: `Диагональ ${[v1, v2].sort().join('')}`,
         p1Id: v1,
         p2Id: v2,
         parentIds: [v1, v2],
@@ -830,7 +901,7 @@ export function dispatchSemanticCommand(
 
       const updatedAux: AuxiliaryState = {
         ...currentAux,
-        segments: [...currentAux.segments.filter((s) => s.id !== diagId), newDiag]
+        segments: [...currentAux.segments, newDiag]
       };
 
       return {
@@ -840,7 +911,7 @@ export function dispatchSemanticCommand(
         createdEntityIds: [diagId],
         affectedEntityIds: [diagId, v1, v2],
         updatedAuxiliaryState: updatedAux,
-        message: `Diagonal ${v1}${v2} constructed (length: ${length.toFixed(1)} mm)`,
+        message: `Diagonal ${[v1, v2].sort().join('')} constructed (length: ${length.toFixed(1)} mm)`,
         observation: { distanceMm: length }
       };
     }
@@ -973,13 +1044,7 @@ export function dispatchSemanticCommand(
         };
       }
 
-      const isAC = (id: string) => (id.includes('A') && id.includes('C')) || id.includes('AC');
-      const isBD = (id: string) => (id.includes('B') && id.includes('D')) || id.includes('BD');
-      const isDiagonals =
-        (isAC(command.entity1Id) && isBD(command.entity2Id)) ||
-        (isBD(command.entity1Id) && isAC(command.entity2Id));
-
-      const pLabel = isDiagonals ? 'P' : `P${currentAux.points.length + 1}`;
+      const pLabel = allocateIntersectionPointLabel(currentAux.points);
       const ptId = `pt_inter_${command.entity1Id}_${command.entity2Id}`;
 
       const newPt: AuxiliaryPoint = {
@@ -989,7 +1054,7 @@ export function dispatchSemanticCommand(
         y: inter.y,
         type: 'intersection',
         parentIds: [command.entity1Id, command.entity2Id],
-        color: '#38bdf8'
+        color: '#f59e0b'
       };
 
       const updatedAux: AuxiliaryState = {
