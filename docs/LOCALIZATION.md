@@ -1,12 +1,12 @@
-# Localization & AAM Language Gateway (RU / UA / EN)
+# Localization & Terminology Alignment (RU / UA / EN)
 
-**Status:** Living Documentation Specification
+**Status:** Living Architectural Specification (Remix 3 / CQNS-001)
 
 ---
 
 ## 1. Overview
 
-The **CQNS-001 Stand** integrates multi-language normalization across all user interface panels, educational materials, and research protocols.
+The **CQNS-001 Stand** integrates full multi-language normalization across all user interface panels, educational materials, and research protocols.
 
 The system supports three languages:
 - **Russian (`RU`)** — Default
@@ -17,8 +17,8 @@ The system supports three languages:
 
 ## 2. Architecture & Persistence
 
-### A. Core Architecture (`translations.ts`)
-All user-facing strings are localized via `getTranslation(language: Language): TranslationDictionary` in `remix2/src/ui/i18n/translations.ts`.
+### A. Local Implementation (`translations.ts`)
+All user-facing strings, panel headers, tool descriptions, and educational checklist cards are managed through a local dictionary in `remix2/src/ui/i18n/translations.ts`:
 
 ```typescript
 import { Language } from '../types/uiTypes';
@@ -29,11 +29,11 @@ export function getTranslation(language: Language = 'RU') {
 }
 ```
 
-### B. Persistence Layer
-User language selection is persisted across sessions using browser `localStorage`:
+### B. Persistence Layer (`localStorage`)
+The active language selection is stored in the browser's `localStorage` under the key `cqns_language_preference`:
 - **Storage Key:** `cqns_language_preference`
 - **Reader (`getSavedLanguage`):** Retrieves saved code (`'RU' | 'UA' | 'EN'`). Defaults to `'RU'` if uninitialized or invalid.
-- **Writer (`saveLanguagePreference`):** Saves selected language code to `localStorage`.
+- **Writer (`saveLanguagePreference`):** Saves the selected language code.
 
 ```typescript
 export function getSavedLanguage(): Language {
@@ -43,7 +43,7 @@ export function getSavedLanguage(): Language {
       return saved;
     }
   } catch (e) {
-    // Fallback for sandboxed or storage-disabled environments
+    // Graceful fallback for sandboxed environments
   }
   return 'RU';
 }
@@ -59,38 +59,31 @@ export function saveLanguagePreference(language: Language): void {
 
 ---
 
-## 3. Coverage Inventory
+## 3. Relationship to AAM Language Kernel
+
+* **Terminology & Semantic Alignment:** UI terminology, schema keys, and concepts are aligned with the AAM Language Kernel and Universal Normalization Stand references.
+* **Zero External Dependencies:** Runtime localization operates completely self-contained within the application bundle via `translations.ts` and `localStorage`. The project **does not require an external AAM repository or runtime network service** to deliver full multi-language support.
+
+---
+
+## 4. Coverage Inventory
 
 Language normalization is applied across 100% of the UI shell and analytical panels:
 
 1. **Header Bar (`HeaderBar.tsx`):** `RU / UA / EN` toggle buttons with active state highlighting and persistent storage callback.
-2. **Summary Table Panel (`SummaryTablePanel.tsx`):** Geometric properties, opposite angle sums ($\angle A + \angle C = 180^\circ$, $\angle B + \angle D = 180^\circ$), Ptolemy equation breakdown ($AC \cdot BD = AB \cdot CD + BC \cdot DA$), and area metrics ($S_{circle}, S_{quad}, S_{gap}$).
+2. **Summary Table Panel (`SummaryTablePanel.tsx`):** Geometric properties, opposite angle sums ($\angle A + \angle C = 180^\circ$), Ptolemy equation breakdown ($AC \cdot BD = AB \cdot CD + BC \cdot DA$), and area metrics ($S_{circle}, S_{quad}, S_{gap}$).
 3. **Structural Passport Panel (`PassportPanel.tsx`):** Quadrilateral classification, side/diagonal equality badges, center location status, and invariant verification summaries.
 4. **AAM Gateway Panel (`AAMGatewayPanel.tsx`):** State hash, normalized representation schema, SOL command contracts, and version descriptors.
 5. **Education Panel (`EducationPanel.tsx`):**
-   - **Agent Research Checklist (12-step protocol):**
-     1. `QUESTION` / `ВОПРОС` / `ПИТАННЯ`
-     2. `OBJECT` / `ОБЪЕКТ` / `ОБ'ЄКТ`
-     3. `VARIABLE` / `ПЕРЕМЕННАЯ` / `ЗМІННА`
-     4. `CONSTRUCTION` / `ПОСТРОЕНИЕ` / `ПOБУДОВА`
-     5. `MEASUREMENT` / `ИЗМЕРЕНИЕ` / `ВИМІРЮВАННЯ`
-     6. `RELATION` / `СВЯЗЬ / ВЫРАЖЕНИЕ` / `ЗВ'ЯЗОК / ВЫРАЗ`
-     7. `PARAMETER SWEEP` / `ВАРИАЦИЯ ПАРАМЕТРОВ` / `ВАРИАЦІЯ ПАРАМЕТРІВ`
-     8. `PATTERN` / `ЗАКОНОМЕРНОСТЬ` / `ЗАКОНОМІРНІСТЬ`
-     9. `HYPOTHESIS` / `ГИПОТЕЗА` / `ГІПОТЕЗА`
-     10. `COUNTEREXAMPLE` / `КОНТРПРИМЕР` / `КОНТРПРИКЛАД`
-     11. `NEXT EXPERIMENT` / `СЛЕДУЮЩИЙ ЭКСПЕРИМЕНТ` / `НАСТУПНИЙ ЕКСПЕРИМЕНТ`
-     12. `EPISTEMIC STATUS` / `ЭПИСТЕМИЧЕСКИЙ СТАТУС` / `ЕПІСТЕМІЧНИЙ СТАТУС`
-   - **Deterministic Reasoning Anchor (DRA) Heuristics:** Tool-verified facts, agent interpretations, hypotheses, and epistemic notes.
-   - **Theorem Cards:** Opposite angles, inscribed angle theorem, and Ptolemy's theorem cards with live dynamic evaluations.
-6. **Geometry Research Table (`GeometryResearchTable.tsx`):** Table column headers, snapshot versions, step indices, and metrics.
-7. **Numeric Angles Modal (`NumericAnglesModal.tsx`):** Dialog title, vertex angle inputs, submit buttons, and validation errors.
-8. **Research Plane Controls (`ResearchPlaneControls.tsx`):** Plane 1 / Plane 2 selection, FIX Plane 2 toggle, and Clone to Plane 2 action tooltips.
+   - **Agent Research Checklist (12-step protocol):** Fully localized in RU, UA, and EN (Question, Object, Variable, Construction, Measurement, Relation, Parameter Sweep, Pattern, Hypothesis, Counterexample, Next Experiment, Epistemic Status).
+   - **Deterministic Reasoning Anchor (DRA):** Three epistemological boundary cards (Tool-Verified Fact, Agent Interpretation, Agent Hypothesis) fully translated.
+6. **Geometry Research Table (`GeometryResearchTable.tsx`):** Normalized column headers and state observation parameters.
+7. **School Toolbar & Guidance (`SchoolToolbar.tsx`, `GeometryCanvas.tsx`):** Interactive floating tool instructions and step-by-step prompts.
 
 ---
 
-## 4. Status
+## 5. Verification Status
 
-- **Code Implementation:** `COMPLETE`
-- **Build & Typecheck:** `PASSED`
-- **Browser UI Manual Verification:** `NOT BROWSER VERIFIED`
+- **Automated Regression Test Suite (`researchGuide.test.ts`):** `PASSED`
+- **Build & Static Typecheck:** `PASSED` (Zero TypeScript errors)
+- **Desktop Browser UI Verification:** `VERIFIED` (Manual desktop testing confirms instant language switching across all panels and persistence across page reloads).

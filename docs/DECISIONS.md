@@ -183,15 +183,30 @@ This document records the foundational architectural decisions governing Geometr
 
 ---
 
-## ADR-020 — AAM Language Kernel & Semantic Gateway Integration
+## ADR-020 — Localization & Semantic Terminology Alignment
 
 * **Status:** ACCEPTED / IMPLEMENTED
 * **Context:** The stand requires full multi-language normalization (`RU`, `UA`, `EN`) across UI shells, analytical tables, structural passports, educational checklist cards, theorem proofs, and modal dialogs with persistent language memory across sessions.
 * **Decision:**
-  1. Centralize language dictionaries in `translations.ts` and expose a unified getter `getTranslation(language)`.
+  1. Centralize language dictionaries locally in `remix2/src/ui/i18n/translations.ts` and expose a unified getter `getTranslation(language)`.
   2. Implement `getSavedLanguage()` and `saveLanguagePreference(lang)` using browser `localStorage` (`cqns_language_preference`) with safe fallback to `'RU'`.
-  3. Pass `language` down through `UIState` to all panels (`SummaryTablePanel`, `PassportPanel`, `AAMGatewayPanel`, `EducationPanel`, `GeometryResearchTable`, `NumericAnglesModal`, `ResearchPlaneControls`).
-  4. Fully localize the 12-step Agent Research Checklist and DRA Heuristic cards in `RU`, `UA`, and `EN`.
-* **Reason:** Guarantees language normalization, semantic consistency across all research panels, and user preference persistence without breaking mathematical core immutability.
+  3. Align all terminology, schema keys, and concepts with the AAM Language Kernel reference, but keep the implementation completely self-contained with zero external runtime network dependencies.
+  4. Pass `language` down through `UIState` to all panels (`SummaryTablePanel`, `PassportPanel`, `AAMGatewayPanel`, `EducationPanel`, `GeometryResearchTable`, `NumericAnglesModal`, `ResearchPlaneControls`).
+  5. Fully localize the 12-step Agent Research Checklist and DRA Heuristic cards in `RU`, `UA`, and `EN`.
+* **Reason:** Guarantees language normalization, semantic consistency across all research panels, and user preference persistence without external runtime fragility or breaking mathematical core immutability.
+
+---
+
+## ADR-021 — On-Demand Intersection Candidate Scanner & Semantic Materialization
+
+* **Status:** ACCEPTED / IMPLEMENTED
+* **Context:** Rendering all potential intersections statically creates visual clutter and combinatorial explosion. In addition, memoized canvas snapping callbacks risked stale spatial references when newly added geometry was not tracked in dependency arrays.
+* **Decision:**
+  1. **On-Demand Interaction:** Intersection Mode is strictly on-demand. The system reveals candidate intersections dynamically via cursor proximity ($\le 12\text{ mm}$ snap radius).
+  2. **Non-Mutating Observation:** The candidate diamond indicator (`◇ intersection candidate`) is a transient visual observation. Cursor movement does not mutate `GeometryState` or the Construction DAG.
+  3. **Explicit Semantic Materialization:** Clicking on an active candidate executes `CONSTRUCT_INTERSECTION`, materializing a first-class `AuxiliaryPoint` ($I_n$) with explicit parent entity IDs (`parentIds: [e1, e2]`).
+  4. **Dynamic DAG Tracking:** When either parent entity is deformed, Kramer's rule automatically recomputes the intersection coordinates while preserving IDs, labels, and child dependencies.
+  5. **Human-Equivalent Agent Fallback:** If an agent needs to mark an intersection without using `Intersection Mode`, it may use `CONSTRUCT_POINT` as a user-equivalent fallback. However, this fallback point remains an ordinary point ($0$ or $1$ parent) and does not replace `INTERSECT` ($2$ parents) where dynamic lineage is required (**NO MAGIC GEOMETRY**).
+* **Reason:** Ensures clean UI ergonomics, mathematically pure DAG lineage, predictable dynamic deformation tracking, and prevents stale memoization regressions.
 
 

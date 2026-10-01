@@ -1,4 +1,4 @@
-# Geometry Reasoning Stand — Architecture Specification (Remix 2 & Remix 3)
+# Geometry Reasoning Stand — Architecture Specification (Remix 3 / CQNS-001)
 
 **Status:** Living Architectural Specification (Remix 3 Current State)
 
@@ -6,7 +6,9 @@
 
 ## 1. General Architectural Hierarchy
 
-Geometry Reasoning Stand is organized into strictly decoupled horizontal layers with two-plane operational research support and multi-language normalization:
+The **CQNS-001 Stand** is organized into strictly decoupled horizontal layers with two-plane operational research support, a headless command dispatcher, and local multi-language normalization:
+
+> **Architecture Foundation:** The current Remix 3 implementation uses the `/remix2/` technical foundation directory inherited from the previous implementation phase. `/remix2/` is the active codebase housing the Remix 3 mathematical kernel, UI components, and test suites.
 
 ```text
                            GEOMETRY REASONING STAND
@@ -54,7 +56,7 @@ Geometry Reasoning Stand is organized into strictly decoupled horizontal layers 
 
 ---
 
-## 2. Multi-Plane Research Architecture (Remix 3)
+## 2. Multi-Plane Research Architecture
 
 ### A. Plane 1 (Experimental Plane)
 - **Role:** Primary interactive workspace for continuous geometric exploration, dynamic mutations, and ad-hoc constructions.
@@ -78,99 +80,46 @@ Geometry Reasoning Stand is organized into strictly decoupled horizontal layers 
 
 ---
 
-## 3. Toolset & Geometric Semantics
+## 3. Intersection Engine: On-Demand Architecture
 
-### A. Canonical School Tools
-1. **`SELECT`**: Vertex inspection and parametric drag exploration.
-2. **`POINT`**: Free point, point on chord/segment (`on_segment`), or point on circumcircle (`on_circle`).
-3. **`SEGMENT`**: Point-to-point chord or auxiliary segment.
-4. **`RULER`**: Two-point distance measurement.
-5. **`COMPASS`**: Center + radius point or numerical radius circle.
-6. **`LINE_CIRCLE`**: Extended straightedge line or center-radius circle.
-7. **`PARALLEL`**: Parallel line through point relative to reference chord/line.
-8. **`PERPENDICULAR`**: Normal line through point relative to reference chord/line.
-9. **`ANGLE_BISECTOR`**: Angle bisector ray through 3 points (arm 1, vertex, arm 2).
-10. **`DIAGONAL`**: Quadrilateral diagonal ($AC$ or $BD$).
-11. **`TANGENT`**: Tangent line to circumcircle $S^1$ through point $P \in S^1$.
-12. **`ERASER`**: Deletion of auxiliary entity and dependent DAG descendents.
+### A. Non-Mutating Candidate Discovery
+* **On-Demand Interaction:** To prevent visual clutter and combinatorial explosion of virtual points, intersection candidates are computed dynamically within the cursor proximity threshold ($\le 12\text{ mm}$).
+* **Spatial Scanning:** On each `pointermove` over the canvas, `findSnapTarget` evaluates pairs of non-parallel entities (chords, auxiliary segments, and auxiliary lines).
+* **Transient Visual Observation:** When an intersection point is within $12\text{ mm}$ of the cursor, it is exposed as a `SnapTarget` with `entityType: 'intersection_candidate'`. Moving the cursor away discards the candidate with zero mutation to `GeometryState` or the Construction DAG.
 
-### B. Tangent Tool Specification (`CONSTRUCT_TANGENT`)
-- **Status:** `IMPLEMENTED` / `TESTED`
-- **Geometric Semantics:** For a point $P \in S^1(O, R)$, the tangent line $L(P)$ is defined by:
-  $$\vec{r} = P - O, \quad \vec{u} = \left(-\frac{r_y}{\|\vec{r}\|}, \frac{r_x}{\|\vec{r}\|}\right), \quad L(P) = \{ P + t \cdot \vec{u} \mid t \in \mathbb{R} \}$$
-- **Verification:** Dot product of tangent direction and radius vector is strictly zero ($\vec{u} \cdot \vec{r} = 0$).
-- **DAG Lineage:** `parentIds: ['circle_main', pointId]`.
+### B. First-Class Materialization & DAG Tracking
+* **Explicit Confirmation:** Clicking an active candidate invokes `resolveOrCreatePoint`, which dispatches `CONSTRUCT_INTERSECTION` with the two parent entity IDs.
+* **Lineage Preservation:** The resulting `AuxiliaryPoint` receives:
+  - Unique ID ($I_1, I_2, I_3, \dots$);
+  - Type `intersection`;
+  - Explicit parent identifiers `parentIds: [parent1Id, parent2Id]`.
+* **Dynamic Recomputation:** When either parent entity is deformed, `recomputeAuxiliaryGeometry` evaluates Kramer's rule to update the intersection coordinates dynamically while preserving its identifier, label, and any downstream dependent constructions (composability).
 
 ---
 
-## 4. Language Kernel & Semantic Gateway (RU / UA / EN)
+## 4. Agent Architecture: Two Operating Levels
 
-### A. Semantic Gateway Principle
-The language layer operates as a **Semantic Gateway** — a normalization layer providing language-invariant mapping for UI presentations, educational protocols, and research observations:
-- **Languages Supported:** Russian (`RU`), Ukrainian (`UA`), English (`EN`).
-- **Persistence:** User language choice is loaded via `getSavedLanguage()` and saved via `saveLanguagePreference(lang)` into browser `localStorage` under key `cqns_language_preference` (defaulting to `'RU'`).
+1. **Level A — Semantic Construction:**
+   The agent directly invokes high-level semantic commands (`INTERSECT`, `CONSTRUCT_POINT`, `CONSTRUCT_SEGMENT`, `CONSTRUCT_DIAGONAL`, `CONSTRUCT_PARALLEL`, `CONSTRUCT_TANGENT`). Each operation validates topological preconditions and emits structured observations.
 
-### B. Normalized Subsystems
-- **Summary Table Panel:** Invariant metrics, opposite angle sums, Ptolemy ratios, area breakdown.
-- **Structural Passport Panel:** Quadrilateral classification, diagonal properties, center location status.
-- **AAM Gateway Panel:** Normalized representation export, state hash, version status.
-- **Education Panel & Research Checklist:** Complete 12-step research protocol (Question, Object, Variable, Construction, Measurement, Relation, Parameter Sweep, Pattern, Hypothesis, Counterexample, Next Experiment, Epistemic Status) and DRA Heuristic Rails.
-- **Numeric Angles Modal:** Dialog headers, vertex input labels, validation error messages.
-- **Research Plane Controls:** Controls, clone buttons, tooltips, plane status badges.
+2. **Level B — Human-Equivalent Fallback:**
+   When a specialized semantic shortcut is not directly available, the agent is designed to accomplish the task through a valid user-equivalent sequence of primitive tools. For example, if an automatic intersection command is not accessible, the agent may use `CONSTRUCT_POINT` to place an auxiliary point at the visual intersection coordinate.
+   
+   **Key Semantic Boundary:** A point constructed via `POINT` has $0$ or $1$ parent and does not dynamically track parent line movements; a point constructed via `INTERSECT` has $2$ parents and tracks dynamic updates. The fallback must never become an arbitrary coordinate injection (**NO MAGIC GEOMETRY**).
 
 ---
 
-## 5. Human Path vs. Agent Path
+## 5. Localization & Terminology Alignment
 
-```text
-A. HUMAN INTERACTION PATH:
-   Human User
-       ↓
-   Header Bar Language Selector (RU/UA/EN) & Toolbar
-       ↓
-   App UI State (language, activeTool, standMode)
-       ↓
-   resolveOrCreatePoint / Dynamic Snapping
-       ↓
-   dispatchSemanticCommand(command, context)
-       ↓
-   UniversalGeometryState & AuxiliaryEngine DAG
-
-B. AGENT EXECUTION PATH:
-   Autonomous Agent / Machine Runner
-       ↓
-   AgentInterface Adapter (agentInterface.ts)
-       ↓
-   AgentCommand { planeId: 'PLANE_1' | 'PLANE_2', command: SemanticCommand }
-       ↓
-   Plane 2 FIXED & Concurrency Version Guard
-       ↓
-   dispatchSemanticCommand(command, context)
-       ↓
-   PlaneObservation / Multi-Plane AgentObservation DTO
-```
+* **Runtime Architecture:** Local, dependency-free implementation via `translations.ts` and browser `localStorage` (`cqns_language_preference`).
+* **AAM Alignment:** Terminology, schema keys, and concepts are aligned with the AAM Language Kernel reference, but the stand contains **no external runtime network dependency** on external AAM repositories.
 
 ---
 
-## 6. Core Constitutional Principles
+## 6. Verification & Build Integrity
 
-1. **The Prime Constitutional Axiom:**
-   > **AGENT MAY BE WRONG. THE STAND MUST NOT.**
-   The stand produces mathematically verified facts (coordinates, equations, lengths, areas, invariants). The agent consumes and reasons about these facts.
-2. **Epistemic Separation:**
-   - *Mathematical Fact* $\neq$ *Software Action* $\neq$ *Research Interpretation*.
-3. **Construction $\neq$ Verification:**
-   - Constructing an auxiliary entity records operational lineage in the DAG; it does not prove a geometric theorem.
-4. **No Magic Geometry:**
-   - All geometric entities must possess explicit provenance and traceable parent identifiers.
-5. **UI Capability $\neq$ Agent Capability:**
-   - Presence of a UI button or visual widget does not constitute proof of autonomous agent access until verified by headless integration tests.
-
----
-
-## 7. Verification & Build Integrity
-
-- **Active Test Suites:** 23 passing test suites in `npm test` (100% PASS).
+- **Automated Regression Suites:** 24 passing test suites in `npm test` (100% PASS).
 - **Static Typecheck:** Zero errors (`tsc -p remix2/tsconfig.json --noEmit`).
-- **Production Build:** Verified (`vite build`).
-- **Browser/UI Verification Status:** `NOT BROWSER VERIFIED` (Automated build and tests pass; manual browser UI interaction is pending user verification).
+- **Production Build:** Verified (`vite build --config remix2/vite.config.ts`).
+- **Desktop Browser Verification:** `VERIFIED` across core interactive features (Undo, Eraser, Diagonal, Toolbar, RU/UA/EN Localization, Education, and On-Demand Intersection Mode).
+- **Mobile Touch Verification:** `NOT TESTED` (Requires physical touch-screen devices).

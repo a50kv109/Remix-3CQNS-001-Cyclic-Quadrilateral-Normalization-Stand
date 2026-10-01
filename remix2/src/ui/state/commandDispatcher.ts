@@ -63,6 +63,8 @@ export interface CommandExecutionContext {
     readonly p1: Point;
     readonly p2: Point;
     readonly label?: string;
+    readonly startVertexId?: string;
+    readonly endVertexId?: string;
   }[];
   readonly auxiliaryState: AuxiliaryState;
   readonly bounds?: number;
@@ -183,7 +185,11 @@ export function resolveSegmentOrLine(
   // 1. Check base chords
   if (ctx.baseChords) {
     const chord = ctx.baseChords.find(
-      (c) => c.id === id || c.id === `chord_${id}` || id.includes(c.id)
+      (c) => c.id === id ||
+        c.id === `chord_${id}` ||
+        id.includes(c.id) ||
+        id.replace(/_/g, '').includes(c.id) ||
+        (c.startVertexId && c.endVertexId && (id === `chord_${c.startVertexId}_${c.endVertexId}` || id === `${c.startVertexId}_${c.endVertexId}`))
     );
     if (chord) {
       return { p1: chord.p1, p2: chord.p2, label: chord.label || chord.id };

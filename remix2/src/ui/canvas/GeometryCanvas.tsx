@@ -181,10 +181,13 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
     let activeAuxPoints = auxiliaryState.points;
     let activeChords = chords;
     let activeSegments = auxiliaryState.segments;
+    let activeLines = auxiliaryState.lines;
 
     if (activePlane === 'PLANE_2' && researchSession) {
-      // Logic for Plane 2 snap targets would go here in full implementation
-      // For R3-01.1, we acknowledge the activePlane routing
+      const p2Aux = researchSession.plane2.auxState;
+      activeAuxPoints = p2Aux.points;
+      activeSegments = p2Aux.segments;
+      activeLines = p2Aux.lines;
     }
     
     const snap = findSnapTarget(
@@ -197,13 +200,25 @@ export const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
       activeSegments,
       14 / zoom,
       uiState.intersectionMode,
-      auxiliaryState.lines
+      activeLines
     );
     if (snap) {
       return { pt: { x: snap.x, y: snap.y }, snap };
     }
     return { pt: { x: worldX, y: worldY }, snap: null };
-  }, [vertices, center, radius, auxiliaryState.points, chords, auxiliaryState.segments, zoom]);
+  }, [
+    vertices,
+    center,
+    radius,
+    auxiliaryState.points,
+    chords,
+    auxiliaryState.segments,
+    auxiliaryState.lines,
+    zoom,
+    uiState.intersectionMode,
+    activePlane,
+    researchSession
+  ]);
 
   // Reset current tool step
   const handleCancelTool = useCallback(() => {

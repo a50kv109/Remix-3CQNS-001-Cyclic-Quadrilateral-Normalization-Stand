@@ -324,6 +324,16 @@ export function findSnapTarget(
 
   // 3b. Virtual Intersection Candidates (Active ONLY when enableIntersectionCandidates is true)
   if (enableIntersectionCandidates) {
+    // Helper to resolve point coordinates by ID (including center O)
+    const resolvePt = (id: string): Point | undefined => {
+      if (id === 'O' || id === circumcircle.center.id) return circumcircle.center;
+      const ap = auxiliaryPoints.find((p) => p.id === id);
+      if (ap) return { id: ap.id, x: ap.x, y: ap.y };
+      const cv = canonicalVertices.find((v) => v.id === id);
+      if (cv) return { id: cv.id, x: cv.cartesian.x, y: cv.cartesian.y };
+      return undefined;
+    };
+
     // Gather all line-like objects
     interface LineLikeEntity {
       id: string;
@@ -348,10 +358,8 @@ export function findSnapTarget(
 
     // Auxiliary Segments
     for (const seg of auxiliarySegments) {
-      const p1 = auxiliaryPoints.find((p) => p.id === seg.p1Id) ||
-        canonicalVertices.find((v) => v.id === seg.p1Id)?.cartesian;
-      const p2 = auxiliaryPoints.find((p) => p.id === seg.p2Id) ||
-        canonicalVertices.find((v) => v.id === seg.p2Id)?.cartesian;
+      const p1 = resolvePt(seg.p1Id);
+      const p2 = resolvePt(seg.p2Id);
       if (p1 && p2) {
         lineEntities.push({
           id: seg.id,
@@ -365,15 +373,49 @@ export function findSnapTarget(
 
     // Auxiliary Lines
     for (const line of auxiliaryLines) {
+      let p1: { x: number; y: number } | undefined;
+      let p2: { x: number; y: number } | undefined;
+
       if (line.anchorPoint && line.direction) {
+        p1 = { x: line.anchorPoint.x, y: line.anchorPoint.y };
+        p2 = {
+          x: line.anchorPoint.x + line.direction.dx,
+          y: line.anchorPoint.y + line.direction.dy
+        };
+      } else if (line.point1Id && line.point2Id) {
+        p1 = resolvePt(line.point1Id);
+        p2 = resolvePt(line.point2Id);
+      } else if (line.throughPointId) {
+        p1 = resolvePt(line.throughPointId);
+        if (line.point1Id && line.point2Id) {
+          p2 = resolvePt(line.point2Id);
+        } else if (line.referenceSegmentId) {
+          const refSeg = auxiliarySegments.find((s) => s.id === line.referenceSegmentId) ||
+            chords.find((c) => c.id === line.referenceSegmentId);
+          if (refSeg) {
+            const rp1 = (refSeg as AuxiliarySegment).p1Id
+              ? resolvePt((refSeg as AuxiliarySegment).p1Id)
+              : (refSeg as any).p1;
+            const rp2 = (refSeg as AuxiliarySegment).p2Id
+              ? resolvePt((refSeg as AuxiliarySegment).p2Id)
+              : (refSeg as any).p2;
+            if (p1 && rp1 && rp2) {
+              const dx = rp2.x - rp1.x;
+              const dy = rp2.y - rp1.y;
+              p2 = line.type === 'perpendicular'
+                ? { x: p1.x - dy, y: p1.y + dx }
+                : { x: p1.x + dx, y: p1.y + dy };
+            }
+          }
+        }
+      }
+
+      if (p1 && p2) {
         lineEntities.push({
           id: line.id,
           label: line.label || line.id,
-          p1: { x: line.anchorPoint.x, y: line.anchorPoint.y },
-          p2: {
-            x: line.anchorPoint.x + line.direction.dx,
-            y: line.anchorPoint.y + line.direction.dy
-          },
+          p1,
+          p2,
           isInfinite: true
         });
       }
@@ -402,10 +444,10 @@ export function findSnapTarget(
         if (interPt) {
           // Check if this intersection is already materialized as an existing point
           const alreadyMaterialized = auxiliaryPoints.some(
-            (ap) => euclideanDistance(interPt.x, interPt.y, ap.x, ap.y) < 3.0
+            (ap) => euclideanDistance(interPt.x, interPt.y, ap.x, ap.y) < 1.5
           ) || canonicalVertices.some(
-            (v) => euclideanDistance(interPt.x, interPt.y, v.cartesian.x, v.cartesian.y) < 3.0
-          ) || euclideanDistance(interPt.x, interPt.y, circumcircle.center.x, circumcircle.center.y) < 3.0;
+            (v) => euclideanDistance(interPt.x, interPt.y, v.cartesian.x, v.cartesian.y) < 1.5
+          ) || euclideanDistance(interPt.x, interPt.y, circumcircle.center.x, circumcircle.center.y) < 1.5;
 
           if (!alreadyMaterialized) {
             const dist = euclideanDistance(worldX, worldY, interPt.x, interPt.y);

@@ -1,6 +1,6 @@
 # Research Workspace & Agent Protocol Specification
 
-**Status:** Living Architectural Specification
+**Status:** Living Architectural Specification (Remix 3 / CQNS-001)
 
 ---
 
@@ -61,8 +61,33 @@ The **DRA** establishes strict epistemic boundaries for human and autonomous rea
 
 ---
 
-## 5. Verification Status
+## 5. Agent Operating Protocol & Intersection Fallback
+
+### A. Two Operating Levels for Agents
+1. **Level A — Semantic Construction:**
+   The agent executes explicit semantic operations (`INTERSECT`, `CONSTRUCT_POINT`, `CONSTRUCT_SEGMENT`, `CONSTRUCT_DIAGONAL`, etc.).
+2. **Level B — Human-Equivalent Fallback:**
+   If a specialized semantic shortcut is unavailable, the agent executes the task via a user-equivalent sequence of primitive tools. The resulting configuration must remain a valid geometric construction without violating construction semantics.
+
+### B. Intersection Fallback Rule
+
+> ### INTERSECTION FALLBACK:
+> Если необходимо выделить точку пересечения, а `Intersection Mode` не используется или недоступен, агент может воспользоваться обычным инструментом `POINT` (`CONSTRUCT_POINT`) и поставить точку в месте визуального пересечения.  
+> 
+> **Критическое семантическое правило:**  
+> Точка `POINT` в месте пересечения и семантическая конструкция `INTERSECT` **НЕ являются тождественными операциями**:  
+> * Обычная точка `POINT` имеет $0$ или $1$ родителя и не обновляется динамически при деформации родительских линий;  
+> * Семантическое пересечение `INTERSECT` имеет ровно $2$ родительских объекта в DAG и динамически отслеживает изменения геометрии.  
+> 
+> Если исследовательская задача требует сохранения явной математической связи точки с родительскими объектами, обязателен `INTERSECT`. Fallback через `POINT` допустим как человеко-эквивалентный обходной путь, но **не должен превращаться в произвольную координатную инъекцию**.  
+> 
+> Фундаментальный принцип: **NO MAGIC GEOMETRY**.
+
+---
+
+## 6. Verification Status
 
 - **Automated Regression Test Suite (`researchGuide.test.ts`):** `PASSED`
-- **Build & Typecheck:** `PASSED`
-- **Browser UI Manual Verification:** `NOT BROWSER VERIFIED`
+- **Build & Static Typecheck:** `PASSED`
+- **Desktop Browser UI Verification:** `VERIFIED` across research panels, checklist cards, and checkpoint buffers.
+- **Mobile Touch Interaction:** `NOT TESTED`
