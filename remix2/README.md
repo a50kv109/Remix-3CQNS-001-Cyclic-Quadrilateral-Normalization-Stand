@@ -76,14 +76,18 @@ remix2/
 * **R2-08 & R2-09 Geometry Research Table (`src/research/tableMapper.ts`, `src/ui/components/GeometryResearchTable.tsx`, `tests/geometryResearchRowMapperRegression.test.ts`, `tests/geometryResearchTableRegression.test.ts`):** Pure read-only tabular presentation of snapshot series.
 * **R2-10 Checkpoint Buffer v0.1 (`src/research/checkpointBuffer.ts`, `tests/checkpointBufferRegression.test.ts`):** 3-slot operational return memory with monotonic restore semantics.
 * **R2-11 Agent Observation Utilities v0.1 (`src/research/snapshotDiff.ts`, `tests/agentObservationUtilities.test.ts`):** `GET_ACTIVE_SNAPSHOT`, `GET_ENTITY_MEASUREMENT`, and `diffGeometrySnapshots`.
+* **R2-12 PGS-2D Portable Geometric State Gateway (`src/kernel/pgsAdapter.ts`, `src/kernel/pgs/`, `tests/pgsGateway.test.ts`, `tests/pgsPassportIntegration.test.ts`, `tests/e2ePgsExperiment.test.ts`):** Cross-stand portable geometric state export & import (`.pgs.json`), dual-passport UI (`[CQNS STATE]` / `[PGS-2D]`), exact-state structural validation, and round-trip verification.
 
 ---
 
 ## Standalone Commands
 
 ```bash
-# Run all 16 Remix 2 test suites
+# Run all 27 Remix 3 / Remix 2 regression test suites
 npm run test:r2
+
+# Run E2E PGS Experiment
+npx tsx remix2/tests/e2ePgsExperiment.test.ts
 
 # Run TypeScript type check on Remix 2
 npm run lint:r2

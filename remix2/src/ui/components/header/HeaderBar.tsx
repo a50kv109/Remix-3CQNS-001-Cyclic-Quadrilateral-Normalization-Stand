@@ -28,6 +28,8 @@ interface HeaderBarProps {
   readonly stateHistory: any[];
   readonly onExportJson: () => void;
   readonly onExportSvg: () => void;
+  readonly onExportPgsPassport?: () => void;
+  readonly onOpenPgsModal?: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -39,7 +41,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onUndo,
   stateHistory,
   onExportJson,
-  onExportSvg
+  onExportSvg,
+  onExportPgsPassport,
+  onOpenPgsModal
 }) => {
   const [isProjectMenuOpen, setIsProjectMenuOpen] = useState(false);
   const t = getTranslation(uiState.language);
@@ -191,9 +195,44 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                 <Copy className="w-3.5 h-3.5 text-blue-400" />
                 {t.exportSvg}
               </button>
+              {onExportPgsPassport && (
+                <button
+                  onClick={() => {
+                    onExportPgsPassport();
+                    setIsProjectMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 text-emerald-300 font-medium border-t border-slate-800"
+                >
+                  <FileCode className="w-3.5 h-3.5 text-emerald-400" />
+                  {t.exportPgs}
+                </button>
+              )}
+              {onOpenPgsModal && (
+                <button
+                  onClick={() => {
+                    onOpenPgsModal();
+                    setIsProjectMenuOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-slate-800 flex items-center gap-2 text-purple-300 border-t border-slate-800"
+                >
+                  <FileCode className="w-3.5 h-3.5 text-purple-400" />
+                  <span>PGS-2D Gateway...</span>
+                </button>
+              )}
             </div>
           )}
         </div>
+
+        {/* PGS-2D Quick Access Button */}
+        {onOpenPgsModal && (
+          <button
+            onClick={onOpenPgsModal}
+            className="px-2.5 py-1 bg-purple-950/80 hover:bg-purple-900 border border-purple-700/70 text-purple-200 rounded-md text-xs flex items-center gap-1.5 transition-colors font-medium shadow-sm"
+          >
+            <FileCode className="w-3.5 h-3.5 text-purple-400" />
+            <span>PGS-2D</span>
+          </button>
+        )}
 
         {/* Reset Button */}
         <button

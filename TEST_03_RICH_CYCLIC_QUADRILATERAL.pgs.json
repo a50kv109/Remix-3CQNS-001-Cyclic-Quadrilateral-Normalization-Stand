@@ -1,0 +1,271 @@
+{
+  "pgsVersion": "0.1",
+  "passportId": "TEST_03_RICH_CYCLIC_QUADRILATERAL",
+  "transferMode": "EXACT_STATE",
+  "generator": {
+    "name": "CQNS-001 E2E Test Suite",
+    "version": "0.1.0",
+    "standId": "cyclic-quadrilateral-normalization-stand"
+  },
+  "timestamp": "2026-10-02T10:13:58.956Z",
+  "units": {
+    "length": "mm",
+    "angle": "rad"
+  },
+  "objects": [
+    {
+      "portableId": "pt_O",
+      "semanticType": "point",
+      "semanticRole": "reference",
+      "displayLabel": "O",
+      "geometry": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "portableId": "circle_S1",
+      "semanticType": "circle",
+      "semanticRole": "reference",
+      "displayLabel": "S¹",
+      "geometry": {
+        "centerPointId": "pt_O",
+        "radius": 160
+      },
+      "relations": [
+        {
+          "relationType": "circumscribes",
+          "targetEntityIds": [
+            "poly_ABCD"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_A",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "A",
+      "geometry": {
+        "x": 138.56406460551017,
+        "y": 80.00000000000003
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_B",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "B",
+      "geometry": {
+        "x": -79.99999999999991,
+        "y": 138.56406460551025
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_C",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "C",
+      "geometry": {
+        "x": -138.56406460551025,
+        "y": -79.9999999999999
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_D",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "D",
+      "geometry": {
+        "x": 80.00000000000014,
+        "y": -138.5640646055101
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "edge_AB",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "AB",
+      "geometry": {
+        "startPointId": "pt_A",
+        "endPointId": "pt_B",
+        "length": 226.27416997969513
+      }
+    },
+    {
+      "portableId": "edge_BC",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "BC",
+      "geometry": {
+        "startPointId": "pt_B",
+        "endPointId": "pt_C",
+        "length": 226.27416997969522
+      }
+    },
+    {
+      "portableId": "edge_CD",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "CD",
+      "geometry": {
+        "startPointId": "pt_C",
+        "endPointId": "pt_D",
+        "length": 226.27416997969542
+      }
+    },
+    {
+      "portableId": "edge_DA",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "DA",
+      "geometry": {
+        "startPointId": "pt_D",
+        "endPointId": "pt_A",
+        "length": 226.27416997969513
+      }
+    },
+    {
+      "portableId": "poly_ABCD",
+      "semanticType": "polygon",
+      "semanticRole": "primary",
+      "displayLabel": "ABCD",
+      "geometry": {
+        "vertexIds": [
+          "pt_A",
+          "pt_B",
+          "pt_C",
+          "pt_D"
+        ],
+        "edgeIds": [
+          "edge_AB",
+          "edge_BC",
+          "edge_CD",
+          "edge_DA"
+        ],
+        "isClosed": true
+      },
+      "domainMetadata": {
+        "isCyclic": true,
+        "vertexCount": 4
+      }
+    },
+    {
+      "portableId": "diag_AC",
+      "semanticType": "segment",
+      "semanticRole": "diagonal",
+      "displayLabel": "AC",
+      "geometry": {
+        "startPointId": "pt_A",
+        "endPointId": "pt_C",
+        "length": 320.00000000000006
+      }
+    },
+    {
+      "portableId": "diag_BD",
+      "semanticType": "segment",
+      "semanticRole": "diagonal",
+      "displayLabel": "BD",
+      "geometry": {
+        "startPointId": "pt_B",
+        "endPointId": "pt_D",
+        "length": 320
+      }
+    },
+    {
+      "portableId": "aux_pt_I1",
+      "semanticType": "point",
+      "semanticRole": "derived",
+      "displayLabel": "E",
+      "geometry": {
+        "x": 0,
+        "y": 0
+      },
+      "construction": {
+        "operation": "intersection",
+        "inputEntityIds": [
+          "diag_A_C",
+          "diag_B_D"
+        ]
+      }
+    },
+    {
+      "portableId": "aux_seg_aux_O_E",
+      "semanticType": "segment",
+      "semanticRole": "auxiliary",
+      "displayLabel": "OE",
+      "geometry": {
+        "startPointId": "pt_O",
+        "endPointId": "aux_pt_I1",
+        "length": 0
+      }
+    }
+  ],
+  "identityMap": {
+    "pt_O": "O",
+    "circle_S1": "circumcircle",
+    "pt_A": "A",
+    "pt_B": "B",
+    "pt_C": "C",
+    "pt_D": "D",
+    "edge_AB": "AB",
+    "edge_BC": "BC",
+    "edge_CD": "CD",
+    "edge_DA": "DA",
+    "poly_ABCD": "canonical_quadrilateral",
+    "diag_AC": "diag_AC",
+    "diag_BD": "diag_BD",
+    "aux_pt_I1": "I1",
+    "aux_seg_aux_O_E": "aux_O_E"
+  },
+  "domainMetadata": {
+    "standDomain": "CYCLIC_QUADRILATERAL",
+    "domainProfile": "CYCLIC",
+    "stateVersion": 1,
+    "inscribedCircleRadiusMm": 160,
+    "vertexOrder": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "inscribedOppositeAngleSumDeg": 180
+  },
+  "sourceClaim": {
+    "verified": true,
+    "engine": "CQNS-GeometryCore",
+    "timestamp": "2026-10-02T10:13:58.956Z"
+  }
+}

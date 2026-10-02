@@ -12,6 +12,7 @@ import { CanvasRotationBar } from './canvas/CanvasRotationBar';
 import { SchoolToolbar } from './canvas/SchoolToolbar';
 import { InformationPanel } from './panels/InformationPanel';
 import { NumericAnglesModal } from './dialogs/NumericAnglesModal';
+import { PGSGatewayModal } from './dialogs/PGSGatewayModal';
 import { UIState, StandMode, Language, PresetType, ActiveTool, ActiveTab, DisplayAngleMode, ActivePlane } from './types/uiTypes';
 import { ResearchPlaneControls } from './components/ResearchPlaneControls';
 import { ResearchSession, PlaneSession, PlaneId, Plane2Lifecycle } from './types/researchSession';
@@ -22,6 +23,7 @@ import { CyclicMutationDraft, CartesianMutationDraft } from '../types/geometry';
 import { AuxiliaryState } from './types/auxiliaryTypes';
 import { createEmptyAuxiliaryState, recomputeAuxiliaryGeometry } from './state/auxiliaryEngine';
 import { createGeometryStateSnapshot, mapSnapshotsToResearchRows, GeometryResearchRow } from '../research/index';
+import { exportToPGSJson } from '../kernel/pgsAdapter';
 import { clonePlane1ToPlane2 } from '../research/planeClone';
 import { getSavedLanguage, saveLanguagePreference } from './i18n/translations';
 
@@ -164,6 +166,7 @@ export const App: React.FC = () => {
     intersectionMode: false
   }));
 
+  const [isPgsModalOpen, setIsPgsModalOpen] = useState(false);
   const [isDraggingSplitter, setIsDraggingSplitter] = useState(false);
 
   // 4. Pure Presentation Projection
@@ -402,6 +405,23 @@ export const App: React.FC = () => {
     URL.revokeObjectURL(url);
   }, [geometryState.stateVersion]);
 
+  const handleExportPgsPassport = useCallback(() => {
+    const pgsJsonStr = exportToPGSJson(geometryState, auxiliaryState, {
+      passportId: `cqns_001_${Date.now()}`,
+      includeDiagonals: true,
+      includeAuxiliary: true,
+      includeDomainMetadata: true,
+      generatorName: 'CQNS-001 Normalization Stand'
+    });
+    const blob = new Blob([pgsJsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cqns-001-pgs-passport.pgs.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [geometryState, auxiliaryState]);
+
   // 9. Canvas Ribbon Event Handlers
   const handleAngleModeChange = useCallback((mode: DisplayAngleMode) => {
     setUiState((prev) => ({ ...prev, displayAngleMode: mode }));
@@ -539,6 +559,8 @@ export const App: React.FC = () => {
         stateHistory={stateHistory}
         onExportJson={handleExportJson}
         onExportSvg={handleExportSvg}
+        onExportPgsPassport={handleExportPgsPassport}
+        onOpenPgsModal={() => setIsPgsModalOpen(true)}
       />
 
       {/* 2. Main Two-Column Workspace with Draggable Splitter */}
@@ -629,6 +651,7 @@ export const App: React.FC = () => {
           <InformationPanel
             uiState={uiState}
             presentation={presentation}
+            geometryState={geometryState}
             auxiliaryState={auxiliaryState}
             researchRows={researchRows}
             activeStateVersion={geometryState.stateVersion}
@@ -636,6 +659,7 @@ export const App: React.FC = () => {
             onSelectRowSnapshot={handleSelectRowSnapshot}
             onOpenNumericModal={() => setUiState((prev) => ({ ...prev, isNumericModalOpen: true }))}
             onClearSelection={() => handleSelectEntity(null, null)}
+            onExportPgsPassport={handleExportPgsPassport}
           />
         </section>
       </main>
@@ -647,6 +671,19 @@ export const App: React.FC = () => {
         isOpen={uiState.isNumericModalOpen}
         onClose={() => setUiState((prev) => ({ ...prev, isNumericModalOpen: false }))}
         onCommitAngles={handleCommitNumericAngles}
+      />
+
+      {/* 4. PGS-2D Gateway Modal */}
+      <PGSGatewayModal
+        isOpen={isPgsModalOpen}
+        onClose={() => setIsPgsModalOpen(false)}
+        geometryState={geometryState}
+        auxiliaryState={auxiliaryState}
+        language={uiState.language}
+        onApplyImportedState={(nextGeo, nextAux) => {
+          setGeometryState(nextGeo);
+          if (nextAux) setAuxiliaryState(nextAux);
+        }}
       />
     </div>
   );

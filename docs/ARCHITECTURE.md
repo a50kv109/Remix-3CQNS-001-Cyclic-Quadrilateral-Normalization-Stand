@@ -118,8 +118,51 @@ The **CQNS-001 Stand** is organized into strictly decoupled horizontal layers wi
 
 ## 6. Verification & Build Integrity
 
-- **Automated Regression Suites:** 24 passing test suites in `npm test` (100% PASS).
+- **Automated Regression Suites:** 27 passing test suites in `npm test` (100% PASS).
+- **PGS-2D Round-Trip Suite:** `npx tsx remix2/tests/e2ePgsExperiment.test.ts` (100% PASS).
 - **Static Typecheck:** Zero errors (`tsc -p remix2/tsconfig.json --noEmit`).
 - **Production Build:** Verified (`vite build --config remix2/vite.config.ts`).
-- **Desktop Browser Verification:** `VERIFIED` across core interactive features (Undo, Eraser, Diagonal, Toolbar, RU/UA/EN Localization, Education, and On-Demand Intersection Mode).
+- **Desktop Browser Verification:** `VERIFIED` across core interactive features (Undo, Eraser, Diagonal, Toolbar, RU/UA/EN Localization, Education, On-Demand Intersection Mode, and Dual-View Passport Panel).
 - **Mobile Touch Verification:** `NOT TESTED` (Requires physical touch-screen devices).
+
+---
+
+## 7. Passport & Export Architecture (CQNS vs PGS-2D)
+
+Both Passport views and all export functions are derived from the single Source of Truth: `UniversalGeometryState` (+ `AuxiliaryState`).
+
+```text
+                    CQNS UNIVERSAL GEOMETRY STATE
+                                 │
+                      ┌──────────┴──────────┐
+                      ▼                     ▼
+               CQNS Geometry          PGS Gateway
+                 Passport                  │
+                      │                    ▼
+                internal view       PGS-2D Passport
+                      │                    │
+                CQNS Stand Scope    ┌──────┴──────┐
+                                    ▼             ▼
+                               UI inspection   .pgs.json
+                                                   │
+                                                   ▼
+                                         Other Stand / AI Agent
+```
+
+### Distinction Between Passport Views:
+
+1. **CQNS Geometry Passport (Internal View):**
+   - **Purpose:** Describes what this specific Geometry Stand knows internally about the current state.
+   - **Content:** CQNS domain metadata (`CYCLIC` profile), preset origin (`PRESET_SQUARE`), `TopologyGuard` status report, Deterministic Reasoning Anchor (DRA) invariants, and internal workspace state.
+
+2. **PGS-2D Portable Passport (Portable View):**
+   - **Purpose:** Portable semantic exchange artifact for inter-stand communication, AI Agent consumption, CAD interoperability, and long-term archiving.
+   - **Content:** Schema version `0.1`, transfer mode `EXACT_STATE`, stable portable IDs (`portableId`), boundary topology (Polygon(4)), relations, measurements, source claim (`CQNS GeometryCore verified`), and receiver verification claim.
+
+> **Transfer Mode Explicit Statement:** The current PGS implementation uses `transferMode = EXACT_STATE`. Full `CONSTRUCTIVE_STATE` (DAG constructive replay) is NOT supported in Schema 0.1 and is NOT claimed as implemented.
+
+### Export Classification:
+1. **Export JSON State:** CQNS-native workspace state serialization (`.json`).
+2. **Export SVG Drawing:** Visual vector diagram export (`.svg`).
+3. **Export PGS-2D Passport:** Portable semantic geometry exchange passport (`.pgs.json`) conforming to PGS-2D Schema `0.1` (`EXACT_STATE`).
+

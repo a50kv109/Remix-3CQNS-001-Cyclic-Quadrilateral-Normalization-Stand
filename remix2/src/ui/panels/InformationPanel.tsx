@@ -7,6 +7,7 @@ import React from 'react';
 import { Table, ShieldCheck, Cpu, GraduationCap, FlaskConical } from 'lucide-react';
 import { ActiveTab, UIState } from '../types/uiTypes';
 import { GeometryPresentationData } from '../projection/presentationModel';
+import { UniversalGeometryState } from '../../kernel/state/geometryState';
 import { AuxiliaryState } from '../types/auxiliaryTypes';
 import { GeometryResearchRow } from '../../research/index';
 import { SummaryTablePanel } from './SummaryTablePanel';
@@ -19,6 +20,7 @@ import { getTranslation } from '../i18n/translations';
 interface InformationPanelProps {
   readonly uiState: UIState;
   readonly presentation: GeometryPresentationData;
+  readonly geometryState?: UniversalGeometryState;
   readonly auxiliaryState?: AuxiliaryState;
   readonly researchRows?: readonly GeometryResearchRow[];
   readonly activeStateVersion?: number;
@@ -26,18 +28,21 @@ interface InformationPanelProps {
   readonly onOpenNumericModal: () => void;
   readonly onClearSelection?: () => void;
   readonly onSelectRowSnapshot?: (stateVersion: number) => void;
+  readonly onExportPgsPassport?: () => void;
 }
 
 export const InformationPanel: React.FC<InformationPanelProps> = ({
   uiState,
   presentation,
+  geometryState,
   auxiliaryState,
   researchRows = [],
   activeStateVersion,
   onTabChange,
   onOpenNumericModal,
   onClearSelection,
-  onSelectRowSnapshot
+  onSelectRowSnapshot,
+  onExportPgsPassport
 }) => {
   const t = getTranslation(uiState.language);
 
@@ -133,7 +138,13 @@ export const InformationPanel: React.FC<InformationPanelProps> = ({
           />
         )}
         {uiState.activeTab === 'passport' && (
-          <PassportPanel presentation={presentation} language={uiState.language} />
+          <PassportPanel
+            presentation={presentation}
+            geometryState={geometryState}
+            auxiliaryState={auxiliaryState}
+            language={uiState.language}
+            onExportPgsPassport={onExportPgsPassport}
+          />
         )}
         {uiState.activeTab === 'gateway' && (
           <AAMGatewayPanel presentation={presentation} language={uiState.language} />

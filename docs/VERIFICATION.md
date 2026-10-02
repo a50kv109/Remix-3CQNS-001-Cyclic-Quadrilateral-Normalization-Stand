@@ -28,9 +28,9 @@ $$\text{HEADLESS TEST} \neq \text{BROWSER VERIFICATION}$$
 
 ---
 
-## 2. Regression Test Inventory (24 Test Suites — All Passing)
+## 2. Regression Test Inventory (27 Test Suites — All Passing)
 
-The system maintains 24 automated regression test suites executed via `npm run test` (`tsx remix2/tests/...`):
+The system maintains 27 automated regression test suites executed via `npm run test` (`tsx remix2/tests/...`):
 
 1. `foundation.test.ts` — Kernel math primitives, vector operations, coordinate transformations.
 2. `geometryState.test.ts` — `UniversalGeometryState` immutability, state versioning, deep freezing.
@@ -62,6 +62,20 @@ The system maintains 24 automated regression test suites executed via `npm run t
     - **TEST E:** Dynamic intersection tracking across geometric deformation (updates coordinates while preserving IDs and parent lineage);
     - **TEST F:** Composability (using materialized $I_1$ as parent for secondary dependent constructions);
     - **TEST G & UNDO:** LIFO history rollback, DAG integrity, and zero dangling references.
+25. `pgsGateway.test.ts` — **CQNS-001 × PGS-2D Gateway Integration Suite:**
+    - Export CQNS state to PGS Exact State JSON;
+    - Import PGS Exact State JSON into CQNS;
+    - Preservation of portableId vs localId mapping, boundary edges, diagonal semantics, and numerical coordinates;
+    - Structural validation before import;
+    - Verification claim integrity.
+26. `pgsPassportIntegration.test.ts` — **Passport UI & Project Export Integration Suite:**
+    - Dual Passport UI sub-tabs (`[CQNS STATE]` vs `[PGS-2D]`);
+    - Project Menu `.pgs.json` export triggering;
+    - Dynamic reflection of live geometry state changes in exported passport.
+27. `e2ePgsExperiment.test.ts` — **End-to-End Portable Geometric State Experiment:**
+    - Full round-trip testing across symmetric, asymmetric, and rich auxiliary states;
+    - Complete CQNS state reset & import verification;
+    - Structural validation rejection of corrupted/invalid passport files.
 
 ---
 
@@ -75,11 +89,13 @@ The system maintains 24 automated regression test suites executed via `npm run t
 * **Dockable Toolbar:** Safe-area positioning at `LEFT`, `RIGHT`, or `BOTTOM` without viewport displacement.
 * **Localization (RU / UA / EN):** Complete UI dictionary coverage and `localStorage` persistence.
 * **Dual-Plane Workspace:** Mutable Plane 1, immutable Plane 2 under `FIXED`, and isolated topological cloning.
+* **PGS-2D Portable Exchange:** UI Passport Dual View, Project Menu Export, `.pgs.json` codec, exact-state import, and `ROUND_TRIP_SUCCESS` verification.
 
 ### B. Remaining Limitations
 * **Mobile / Touch Devices:** `NOT TESTED`. Touch-drag handling on mobile screens has not been validated on real devices.
 * **Line × Circle / Circle × Circle Intersections:** `PARTIAL`. Algebraic solvers exist in the kernel, but dedicated UI candidate snapping is deferred to future work.
 * **Autonomous Agent Closed-Loop Audit:** `PARTIAL`. Headless adapter is tested, but full multi-turn autonomous agent reasoning sessions require external evaluation.
+* **Constructive Replay Mode:** `NOT IMPLEMENTED`. PGS `CONSTRUCTIVE_STATE` DAG history replay is not supported in schema 0.1 (`EXACT_STATE` mode only).
 
 ---
 
@@ -89,9 +105,13 @@ The system maintains 24 automated regression test suites executed via `npm run t
 # Typecheck
 npm run lint
 
-# Run all 24 regression test suites
+# Run all 27 regression test suites
 npm test
+
+# Run E2E PGS Experiment
+npx tsx remix2/tests/e2ePgsExperiment.test.ts
 
 # Production build
 npm run build:r2
 ```
+

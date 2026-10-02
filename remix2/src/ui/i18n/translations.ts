@@ -23,6 +23,7 @@ export interface TranslationDictionary {
   projectMenu: string;
   exportJson: string;
   exportSvg: string;
+  exportPgs: string;
   resetButton: string;
   undoButton: string;
 
@@ -280,6 +281,7 @@ const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     projectMenu: 'Проект',
     exportJson: 'Экспорт JSON состояния',
     exportSvg: 'Экспорт SVG чертежа',
+    exportPgs: 'Экспорт PGS-2D паспорта (.pgs.json)',
     resetButton: 'Сброс',
     undoButton: '↶ Undo',
 
@@ -549,6 +551,7 @@ const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     projectMenu: 'Проєкт',
     exportJson: 'Експорт JSON стану',
     exportSvg: 'Експорт SVG креслення',
+    exportPgs: 'Експорт PGS-2D паспорта (.pgs.json)',
     resetButton: 'Скидання',
     undoButton: '↶ Undo',
 
@@ -818,6 +821,7 @@ const TRANSLATIONS: Record<Language, TranslationDictionary> = {
     projectMenu: 'Project',
     exportJson: 'Export JSON State',
     exportSvg: 'Export SVG Drawing',
+    exportPgs: 'Export PGS-2D Passport (.pgs.json)',
     resetButton: 'Reset',
     undoButton: '↶ Undo',
 

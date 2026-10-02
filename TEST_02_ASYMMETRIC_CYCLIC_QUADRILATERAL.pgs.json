@@ -1,0 +1,241 @@
+{
+  "pgsVersion": "0.1",
+  "passportId": "TEST_02_ASYMMETRIC_CYCLIC_QUADRILATERAL",
+  "transferMode": "EXACT_STATE",
+  "generator": {
+    "name": "CQNS-001 E2E Test Suite",
+    "version": "0.1.0",
+    "standId": "cyclic-quadrilateral-normalization-stand"
+  },
+  "timestamp": "2026-10-02T10:13:58.954Z",
+  "units": {
+    "length": "mm",
+    "angle": "rad"
+  },
+  "objects": [
+    {
+      "portableId": "pt_O",
+      "semanticType": "point",
+      "semanticRole": "reference",
+      "displayLabel": "O",
+      "geometry": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "portableId": "circle_S1",
+      "semanticType": "circle",
+      "semanticRole": "reference",
+      "displayLabel": "S¹",
+      "geometry": {
+        "centerPointId": "pt_O",
+        "radius": 160
+      },
+      "relations": [
+        {
+          "relationType": "circumscribes",
+          "targetEntityIds": [
+            "poly_ABCD"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_A",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "A",
+      "geometry": {
+        "x": 150.35081932574536,
+        "y": 54.723222932106935
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_B",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "B",
+      "geometry": {
+        "x": -41.41104721640326,
+        "y": 154.54813220625095
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_C",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "C",
+      "geometry": {
+        "x": -157.5692404819533,
+        "y": -27.783708426708806
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "pt_D",
+      "semanticType": "point",
+      "semanticRole": "boundary",
+      "displayLabel": "D",
+      "geometry": {
+        "x": 102.84601754984638,
+        "y": -122.56711089903641
+      },
+      "relations": [
+        {
+          "relationType": "incident_on",
+          "targetEntityIds": [
+            "circle_S1"
+          ]
+        }
+      ]
+    },
+    {
+      "portableId": "edge_AB",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "AB",
+      "geometry": {
+        "startPointId": "pt_A",
+        "endPointId": "pt_B",
+        "length": 216.18886643701128
+      }
+    },
+    {
+      "portableId": "edge_BC",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "BC",
+      "geometry": {
+        "startPointId": "pt_B",
+        "endPointId": "pt_C",
+        "length": 216.1888664370113
+      }
+    },
+    {
+      "portableId": "edge_CD",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "CD",
+      "geometry": {
+        "startPointId": "pt_C",
+        "endPointId": "pt_D",
+        "length": 277.12812921102045
+      }
+    },
+    {
+      "portableId": "edge_DA",
+      "semanticType": "segment",
+      "semanticRole": "boundary",
+      "displayLabel": "DA",
+      "geometry": {
+        "startPointId": "pt_D",
+        "endPointId": "pt_A",
+        "length": 183.5444596323346
+      }
+    },
+    {
+      "portableId": "poly_ABCD",
+      "semanticType": "polygon",
+      "semanticRole": "primary",
+      "displayLabel": "ABCD",
+      "geometry": {
+        "vertexIds": [
+          "pt_A",
+          "pt_B",
+          "pt_C",
+          "pt_D"
+        ],
+        "edgeIds": [
+          "edge_AB",
+          "edge_BC",
+          "edge_CD",
+          "edge_DA"
+        ],
+        "isClosed": true
+      },
+      "domainMetadata": {
+        "isCyclic": true,
+        "vertexCount": 4
+      }
+    },
+    {
+      "portableId": "diag_AC",
+      "semanticType": "segment",
+      "semanticRole": "diagonal",
+      "displayLabel": "AC",
+      "geometry": {
+        "startPointId": "pt_A",
+        "endPointId": "pt_C",
+        "length": 318.78230338935856
+      }
+    },
+    {
+      "portableId": "diag_BD",
+      "semanticType": "segment",
+      "semanticRole": "diagonal",
+      "displayLabel": "BD",
+      "geometry": {
+        "startPointId": "pt_B",
+        "endPointId": "pt_D",
+        "length": 312.4147222783787
+      }
+    }
+  ],
+  "identityMap": {
+    "pt_O": "O",
+    "circle_S1": "circumcircle",
+    "pt_A": "A",
+    "pt_B": "B",
+    "pt_C": "C",
+    "pt_D": "D",
+    "edge_AB": "AB",
+    "edge_BC": "BC",
+    "edge_CD": "CD",
+    "edge_DA": "DA",
+    "poly_ABCD": "canonical_quadrilateral",
+    "diag_AC": "diag_AC",
+    "diag_BD": "diag_BD"
+  },
+  "domainMetadata": {
+    "standDomain": "CYCLIC_QUADRILATERAL",
+    "domainProfile": "CYCLIC",
+    "stateVersion": 1,
+    "inscribedCircleRadiusMm": 160,
+    "vertexOrder": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "inscribedOppositeAngleSumDeg": 180
+  },
+  "sourceClaim": {
+    "verified": true,
+    "engine": "CQNS-GeometryCore",
+    "timestamp": "2026-10-02T10:13:58.954Z"
+  }
+}
